@@ -32,9 +32,10 @@ export async function GET(
       return NextResponse.json({ error: "Planner generation not found" }, { status: 404 });
     }
 
-    // Check server-side entitlement
+    // Check server-side entitlement (in demo/beta mode without payment keys, plans are freely unlocked)
+    const isDemoMode = process.env.DEMO_MODE !== "false" || !process.env.STRIPE_SECRET_KEY;
     const entitlement = verifyEntitlement(sessionId, generationId);
-    const isUnlocked = !!entitlement;
+    const isUnlocked = isDemoMode || !!entitlement;
 
     if (isUnlocked && generation.full_data) {
       // User is entitled — return full planner data

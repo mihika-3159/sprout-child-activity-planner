@@ -22,6 +22,7 @@ interface TableStore {
   purchase_entitlements: Record<string, Record<string, unknown>>;
   generation_audits: Array<Record<string, unknown>>;
   analytics_events: Array<Record<string, unknown>>;
+  user_feedback: Array<Record<string, unknown>>;
 }
 
 class SproutDatabase {
@@ -45,6 +46,7 @@ class SproutDatabase {
       purchase_entitlements: {},
       generation_audits: [],
       analytics_events: [],
+      user_feedback: [],
     };
     this.loadFromDisk();
   }
@@ -330,6 +332,20 @@ class SproutDatabase {
       this.store.analytics_events.push({
         event_type: params[0],
         product_type: params[1],
+        created_at: new Date().toISOString(),
+      });
+      return;
+    }
+
+    // ─── INSERT INTO user_feedback ───────────────────────────────
+    if (lower.includes("insert into user_feedback")) {
+      if (!this.store.user_feedback) this.store.user_feedback = [];
+      this.store.user_feedback.push({
+        id: (this.store.user_feedback.length || 0) + 1,
+        session_id: params[0],
+        rating: params[1],
+        feedback: params[2],
+        category: params[3] || "general",
         created_at: new Date().toISOString(),
       });
       return;

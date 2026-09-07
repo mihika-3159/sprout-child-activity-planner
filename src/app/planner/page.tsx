@@ -133,8 +133,8 @@ export default function PlannerChatPage() {
         throw new Error(data.error || "Failed to generate plan");
       }
 
-      // Redirect to preview page
-      router.push(`/preview/${data.generationId}`);
+      // Redirect directly to the full unlocked activity schedule for family testing
+      router.push(`/planner/${data.generationId}`);
     } catch (err: unknown) {
       console.error(err);
       setErrorMessage(

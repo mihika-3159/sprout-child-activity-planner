@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { WeeklyPlanner, MonthlyPlanner, PlannedActivity } from "@/lib/schemas/preferences";
+import FeedbackWidget from "@/components/FeedbackWidget";
 
 export default function FullPlannerPage() {
   const params = useParams();
@@ -383,6 +384,9 @@ export default function FullPlannerPage() {
             );
           })}
         </div>
+
+        {/* Community Beta / Demo Feedback Widget */}
+        <FeedbackWidget generationId={generationId} />
       </main>
     </div>
   );

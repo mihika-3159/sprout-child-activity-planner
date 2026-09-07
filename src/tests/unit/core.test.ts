@@ -90,3 +90,24 @@ describe("Novelty & Fingerprint Engine (Spec Section 4)", () => {
     expect(hash1).not.toBe(hash2);
   });
 });
+
+describe("AI Providers Suite", () => {
+  it("instantiates Cohere and Gemini providers properly", async () => {
+    const { CohereProvider } = await import("../../lib/ai/providers/cohere");
+    const { GeminiProvider } = await import("../../lib/ai/providers/gemini");
+    const { registerProvider, getProvider } = await import("../../lib/ai/interface");
+
+    const cohere = new CohereProvider();
+    expect(cohere.id).toBe("cohere");
+    expect(cohere.name).toContain("Cohere");
+
+    const gemini = new GeminiProvider();
+    expect(gemini.id).toBe("gemini");
+    expect(gemini.name).toContain("Gemini");
+
+    registerProvider(cohere);
+    const retrieved = getProvider("cohere");
+    expect(retrieved.id).toBe("cohere");
+  });
+});
+
