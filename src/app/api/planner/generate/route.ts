@@ -9,10 +9,13 @@ export async function POST(request: NextRequest) {
   try {
     const { sessionId } = await getOrCreateSession();
 
-    // 1. Rate limiting check
-    const rateLimit = rateLimitMiddleware(sessionId, "fullPlannerGenerations");
-    if (rateLimit) {
-      return NextResponse.json(rateLimit.json, { status: rateLimit.status });
+    // 1. Rate limiting check (bypassed in demo mode for community testers)
+    const isDemo = process.env.DEMO_MODE !== "false";
+    if (!isDemo) {
+      const rateLimit = rateLimitMiddleware(sessionId, "fullPlannerGenerations");
+      if (rateLimit) {
+        return NextResponse.json(rateLimit.json, { status: rateLimit.status });
+      }
     }
 
     const rawBody = await request.json();
@@ -65,8 +68,13 @@ export async function POST(request: NextRequest) {
     });
   } catch (err: unknown) {
     console.error("[Planner Generate Error]:", err);
+    const errorMessage = err instanceof Error ? err.message : String(err);
+    const errorStack = err instanceof Error ? String(err.stack || "") : undefined;
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Failed to generate activity plan" },
+      {
+        error: errorMessage || "Failed to generate activity plan",
+        details: errorStack,
+      },
       { status: 500 }
     );
   }

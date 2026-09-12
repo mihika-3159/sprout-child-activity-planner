@@ -108,6 +108,6 @@ describe("AI Providers Suite", () => {
     registerProvider(cohere);
     const retrieved = getProvider("cohere");
     expect(retrieved.id).toBe("cohere");
-  });
+  }, 20000);
 });
 

@@ -78,26 +78,32 @@ export function formatPrice(product: ProductConfig): string {
   return `${symbol}${amount.toFixed(2)}`;
 }
 
+function parseIntSafe(val: string | undefined, fallback: number): number {
+  if (!val || typeof val !== "string" || !val.trim()) return fallback;
+  const parsed = parseInt(val.trim(), 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
 /**
  * Rate limit configuration — all operations are rate limited separately.
  * Values are configurable via environment variables.
  */
 export const AI_LIMITS = {
   chatMessages: {
-    max: parseInt(process.env.RATE_LIMIT_CHAT_MAX ?? "12", 10),
-    windowMinutes: parseInt(process.env.RATE_LIMIT_CHAT_WINDOW_MINUTES ?? "10", 10),
+    max: parseIntSafe(process.env.RATE_LIMIT_CHAT_MAX, 12),
+    windowMinutes: parseIntSafe(process.env.RATE_LIMIT_CHAT_WINDOW_MINUTES, 10),
   },
   plannerPreviews: {
-    max: parseInt(process.env.RATE_LIMIT_PREVIEW_MAX ?? "3", 10),
-    windowMinutes: parseInt(process.env.RATE_LIMIT_PREVIEW_WINDOW_MINUTES ?? "30", 10),
+    max: parseIntSafe(process.env.RATE_LIMIT_PREVIEW_MAX, 3),
+    windowMinutes: parseIntSafe(process.env.RATE_LIMIT_PREVIEW_WINDOW_MINUTES, 30),
   },
   fullPlannerGenerations: {
-    max: parseInt(process.env.RATE_LIMIT_GENERATION_MAX ?? "3", 10),
-    windowMinutes: parseInt(process.env.RATE_LIMIT_GENERATION_WINDOW_MINUTES ?? "60", 10),
+    max: parseIntSafe(process.env.RATE_LIMIT_GENERATION_MAX, 3),
+    windowMinutes: parseIntSafe(process.env.RATE_LIMIT_GENERATION_WINDOW_MINUTES, 60),
   },
   activityRegenerations: {
-    max: parseInt(process.env.RATE_LIMIT_REGENERATION_MAX ?? "15", 10),
-    windowMinutes: parseInt(process.env.RATE_LIMIT_REGENERATION_WINDOW_MINUTES ?? "60", 10),
+    max: parseIntSafe(process.env.RATE_LIMIT_REGENERATION_MAX, 15),
+    windowMinutes: parseIntSafe(process.env.RATE_LIMIT_REGENERATION_WINDOW_MINUTES, 60),
   },
 } as const;
 

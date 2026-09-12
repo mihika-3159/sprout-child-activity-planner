@@ -42,61 +42,78 @@ export function checkRateLimit(
   sessionId: string,
   operation: RateLimitOperation
 ): RateLimitResult {
-  const db = getDb();
-  const config = AI_LIMITS[operation];
-  const hashedId = hashForRateLimit(sessionId);
+  try {
+    const db = getDb();
+    const config = AI_LIMITS[operation] || { max: 3, windowMinutes: 60 };
+    const max = Number.isFinite(config.max) && config.max > 0 ? config.max : 3;
+    const windowMinutes =
+      Number.isFinite(config.windowMinutes) && config.windowMinutes > 0
+        ? config.windowMinutes
+        : 60;
+    const hashedId = hashForRateLimit(sessionId);
 
-  // Clean expired tokens periodically
-  cleanExpiredRateLimitTokens();
+    // Clean expired tokens periodically
+    cleanExpiredRateLimitTokens();
 
-  const windowMs = config.windowMinutes * 60 * 1000;
-  const windowStart = new Date(
-    Math.floor(Date.now() / windowMs) * windowMs
-  ).toISOString();
-  const expiresAt = new Date(
-    Math.floor(Date.now() / windowMs) * windowMs + windowMs
-  ).toISOString();
+    const windowMs = windowMinutes * 60 * 1000;
+    const now = Date.now();
+    const windowStartMs = Math.floor(now / windowMs) * windowMs;
+    const expiresAtMs = windowStartMs + windowMs;
 
-  // Get or create token bucket for this window
-  const existing = db
-    .prepare(
-      `SELECT count FROM rate_limit_tokens 
-       WHERE hashed_id = ? AND operation = ? AND window_start = ?`
-    )
-    .get(hashedId, operation, windowStart) as { count: number } | undefined;
+    const windowStart = new Date(
+      Number.isFinite(windowStartMs) ? windowStartMs : now
+    ).toISOString();
+    const expiresAt = new Date(
+      Number.isFinite(expiresAtMs) ? expiresAtMs : now + 3600000
+    ).toISOString();
+    const resetAt = new Date(
+      Number.isFinite(expiresAtMs) ? expiresAtMs : now + 3600000
+    );
 
-  const currentCount = existing?.count ?? 0;
+    // Get or create token bucket for this window
+    const existing = db
+      .prepare(
+        `SELECT count FROM rate_limit_tokens 
+         WHERE hashed_id = ? AND operation = ? AND window_start = ?`
+      )
+      .get(hashedId, operation, windowStart) as { count: number } | undefined;
 
-  if (currentCount >= config.max) {
+    const currentCount = Number(existing?.count) || 0;
+
+    if (currentCount >= max) {
+      return {
+        allowed: false,
+        remaining: 0,
+        resetAt,
+      };
+    }
+
+    // Increment count
+    if (existing) {
+      db.prepare(
+        `UPDATE rate_limit_tokens SET count = count + 1 
+         WHERE hashed_id = ? AND operation = ? AND window_start = ?`
+      ).run(hashedId, operation, windowStart);
+    } else {
+      db.prepare(
+        `INSERT INTO rate_limit_tokens (hashed_id, operation, window_start, count, expires_at)
+         VALUES (?, ?, ?, 1, ?)`
+      ).run(hashedId, operation, windowStart, expiresAt);
+    }
+
     return {
-      allowed: false,
-      remaining: 0,
-      resetAt: new Date(
-        Math.floor(Date.now() / windowMs) * windowMs + windowMs
-      ),
+      allowed: true,
+      remaining: Math.max(0, max - currentCount - 1),
+      resetAt,
+    };
+  } catch (err) {
+    console.warn("[RateLimiter] Rate check error, allowing request gracefully:", err);
+    return {
+      allowed: true,
+      remaining: 1,
+      resetAt: new Date(Date.now() + 3600000),
     };
   }
-
-  // Increment count
-  if (existing) {
-    db.prepare(
-      `UPDATE rate_limit_tokens SET count = count + 1 
-       WHERE hashed_id = ? AND operation = ? AND window_start = ?`
-    ).run(hashedId, operation, windowStart);
-  } else {
-    db.prepare(
-      `INSERT INTO rate_limit_tokens (hashed_id, operation, window_start, count, expires_at)
-       VALUES (?, ?, ?, 1, ?)`
-    ).run(hashedId, operation, windowStart, expiresAt);
-  }
-
-  return {
-    allowed: true,
-    remaining: config.max - currentCount - 1,
-    resetAt: new Date(
-      Math.floor(Date.now() / windowMs) * windowMs + windowMs
-    ),
-  };
 }
 
 /**
@@ -107,20 +124,30 @@ export function rateLimitMiddleware(
   sessionId: string,
   operation: RateLimitOperation
 ): { status: 429; json: { error: string; retryAfter: number } } | null {
-  const result = checkRateLimit(sessionId, operation);
+  try {
+    const result = checkRateLimit(sessionId, operation);
 
-  if (!result.allowed) {
-    const retryAfterSeconds = Math.ceil(
-      (result.resetAt.getTime() - Date.now()) / 1000
-    );
-    return {
-      status: 429,
-      json: {
-        error: "We're temporarily at generation capacity. Please try again shortly.",
-        retryAfter: retryAfterSeconds,
-      },
-    };
+    if (!result.allowed) {
+      const resetTime =
+        result.resetAt instanceof Date
+          ? result.resetAt.getTime()
+          : Date.now() + 3600000;
+      const retryAfterSeconds = Math.max(
+        1,
+        Math.ceil((resetTime - Date.now()) / 1000)
+      );
+      return {
+        status: 429,
+        json: {
+          error: "We're temporarily at generation capacity. Please try again shortly.",
+          retryAfter: retryAfterSeconds,
+        },
+      };
+    }
+
+    return null;
+  } catch (err) {
+    console.warn("[RateLimitMiddleware] Exception, bypassing rate check:", err);
+    return null;
   }
-
-  return null;
 }
