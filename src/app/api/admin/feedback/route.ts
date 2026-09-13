@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db/schema";
 import { PRIMARY_ADMIN_EMAIL } from "@/lib/config/admin";
 
@@ -7,7 +7,7 @@ export async function GET() {
     const db = getDb();
     const feedbackList = db
       .prepare(`
-        SELECT id, session_id, rating, feedback, category, created_at 
+        SELECT id, session_id, rating, feedback, category, resolved, created_at 
         FROM user_feedback 
         ORDER BY created_at DESC 
         LIMIT 200
@@ -18,6 +18,7 @@ export async function GET() {
         rating: number;
         feedback: string;
         category: string;
+        resolved: number;
         created_at: string;
       }>;
 
@@ -36,6 +37,28 @@ export async function GET() {
     console.error("[Admin Feedback API Error]:", err);
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Failed to load user feedback" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const body = await request.json();
+    const { feedbackId, resolved } = body;
+
+    if (typeof feedbackId !== "number" && typeof feedbackId !== "string") {
+      return NextResponse.json({ error: "Invalid feedback ID" }, { status: 400 });
+    }
+
+    const db = getDb();
+    db.prepare(`UPDATE user_feedback SET resolved = ? WHERE id = ?`).run(resolved ? 1 : 0, Number(feedbackId));
+
+    return NextResponse.json({ success: true });
+  } catch (err: unknown) {
+    console.error("[Admin Feedback PATCH Error]:", err);
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : "Failed to update feedback" },
       { status: 500 }
     );
   }

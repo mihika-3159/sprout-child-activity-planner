@@ -346,8 +346,22 @@ class SproutDatabase {
         rating: params[1],
         feedback: params[2],
         category: params[3] || "general",
+        resolved: 0,
         created_at: new Date().toISOString(),
       });
+      return;
+    }
+
+    // ─── UPDATE user_feedback (resolved) ─────────────────────────
+    if (lower.includes("update user_feedback")) {
+      if (!this.store.user_feedback) this.store.user_feedback = [];
+      const feedbackId = Number(params[params.length - 1]);
+      const entry = this.store.user_feedback.find((f) => f.id === feedbackId);
+      if (entry) {
+        if (lower.includes("set resolved")) {
+          entry.resolved = params[0];
+        }
+      }
       return;
     }
 
@@ -476,6 +490,13 @@ class SproutDatabase {
     // ─── SELECT FROM generation_audits ───────────────────────────
     if (lower.includes("from generation_audits")) {
       return [...this.store.generation_audits].reverse();
+    }
+
+    // ─── SELECT FROM user_feedback ───────────────────────────────
+    if (lower.includes("from user_feedback")) {
+      if (!this.store.user_feedback) return [];
+      // Return sorted newest-first
+      return [...this.store.user_feedback].reverse();
     }
 
     // ─── SELECT FROM analytics_events ────────────────────────────

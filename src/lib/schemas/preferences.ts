@@ -154,6 +154,9 @@ export const PlannerPreferencesSchema = z.object({
 
   // Which product
   productType: z.enum(PLANNER_PRODUCTS),
+
+  // How many other children can play with the child (0 = solo play)
+  playmatesCount: z.number().int().min(0).max(10).optional().default(0),
 });
 
 export type PlannerPreferences = z.infer<typeof PlannerPreferencesSchema>;

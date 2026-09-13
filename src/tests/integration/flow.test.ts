@@ -23,6 +23,7 @@ describe("End-to-End Product Flow (Spec Sections 3, 6, 12, 14)", () => {
     energyLevel: "moderate",
     activitiesPerDay: 1,
     productType: "weekly",
+    playmatesCount: 0,
   };
 
   beforeAll(async () => {

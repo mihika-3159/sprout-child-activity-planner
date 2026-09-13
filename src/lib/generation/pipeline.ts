@@ -118,6 +118,13 @@ NON-NEGOTIABLE PRINCIPLES:
 - Desired Parent Involvement: ${preferences.parentInvolvement}
 - Materials Available: ${availableMaterialsStr}${preferences.householdMaterialsOnly ? " (ONLY common household items)" : ""}
 - Energy Level: ${preferences.energyLevel}
+- Play Context: ${
+  (preferences.playmatesCount ?? 0) === 0
+    ? "SOLO PLAY ONLY — The child will be playing entirely alone. Design an activity that fully absorbs independent attention, requires no partner, and keeps a child self-directed and engaged without adult interaction. The activity must be deeply immersive on its own."
+    : (preferences.playmatesCount ?? 0) === 1
+    ? "PAIRED PLAY — The child has exactly 1 playmate. Design a collaborative or turn-based activity that works well for two children, encouraging teamwork, friendly competition, or shared creativity."
+    : "GROUP PLAY — The child has 2 or more playmates. Design an activity that scales naturally for a group of children, with roles, rounds, or parallel creative tracks to keep everyone engaged."
+}
 
 APPROVED SCIENTIFIC EVIDENCE TO GROUND THIS ACTIVITY:
 Title: "${primaryEvidence.sourceTitle}" (${primaryEvidence.organizationAuthors}, ${primaryEvidence.publicationYear || "n.d."})
@@ -442,7 +449,7 @@ function createGroundedFallbackActivity(
     targetAgeBand: preferences.child.ageBand,
     description: selected.description,
     instructions: selected.instructions,
-    materials: materials.length > 0 ? materials : ["paper", "pencils_crayons"],
+    materials: materials.length > 0 ? materials : ["paper", "pencils and crayons"],
     setupMinutes: selected.setupMinutes,
     activityMinutes: selected.activityMinutes,
     supervisionLevel: selected.supervisionLevel,

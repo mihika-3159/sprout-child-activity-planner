@@ -73,6 +73,7 @@ export default function PlannerChatPage() {
   const [householdOnly, setHouseholdOnly] = useState<boolean>(true);
   const [energyLevel, setEnergyLevel] = useState<EnergyLevel>("moderate");
   const [productType, setProductType] = useState<PlannerProduct>("weekly");
+  const [playmatesCount, setPlaymatesCount] = useState<number>(0);
 
   const chatEndRef = useRef<HTMLDivElement>(null);
 
@@ -118,6 +119,7 @@ export default function PlannerChatPage() {
       energyLevel,
       activitiesPerDay: 1,
       productType,
+      playmatesCount,
     };
 
     try {
@@ -173,9 +175,9 @@ export default function PlannerChatPage() {
             🌱 Sprout Planner
           </Link>
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontSize: "0.875rem", color: "var(--color-stone-500)" }}>
-            <span>Step {step} of 6</span>
+            <span>Step {step} of 7</span>
             <div style={{ display: "flex", gap: "4px" }}>
-              {[1, 2, 3, 4, 5, 6].map((s) => (
+              {[1, 2, 3, 4, 5, 6, 7].map((s) => (
                 <div
                   key={s}
                   className={`progress-dot ${s <= step ? "active" : ""}`}
@@ -420,8 +422,45 @@ export default function PlannerChatPage() {
             </div>
           )}
 
-          {/* Step 4: Environment & Duration */}
+          {/* Step 4: Playmates */}
           {step >= 4 && (
+            <div className="chat-bubble chat-bubble-assistant animate-fade-in">
+              <p style={{ fontWeight: 600, marginBottom: "0.75rem", color: "var(--color-stone-900)" }}>
+                Are there other children your child can play with? This helps us plan activities that work for solo or group play.
+              </p>
+              <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginBottom: "1rem" }}>
+                {[
+                  { value: 0, label: "🧒 No — my child will be playing alone" },
+                  { value: 1, label: "👫 Yes — 1 other child to play with" },
+                  { value: 2, label: "👨‍👩‍👧 Yes — 2 or more others available" },
+                ].map((opt) => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    className={`chip ${playmatesCount === opt.value ? "selected" : ""}`}
+                    onClick={() => setPlaymatesCount(opt.value)}
+                    style={{ textAlign: "left", justifyContent: "flex-start", padding: "0.625rem 1rem" }}
+                    id={`chip-playmates-${opt.value}`}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+              {step === 4 && (
+                <button
+                  type="button"
+                  onClick={() => setStep(5)}
+                  className="btn btn-primary btn-sm"
+                  id="btn-next-step-4"
+                >
+                  Continue →
+                </button>
+              )}
+            </div>
+          )}
+
+          {/* Step 5: Environment & Duration */}
+          {step >= 5 && (
             <div className="chat-bubble chat-bubble-assistant animate-fade-in">
               <p style={{ fontWeight: 600, marginBottom: "0.5rem", color: "var(--color-stone-900)" }}>
                 Where will activities happen?
@@ -457,12 +496,12 @@ export default function PlannerChatPage() {
                 ))}
               </div>
 
-              {step === 4 && (
+              {step === 5 && (
                 <button
                   type="button"
-                  onClick={() => setStep(5)}
+                  onClick={() => setStep(6)}
                   className="btn btn-primary btn-sm"
-                  id="btn-next-step-4"
+                  id="btn-next-step-5"
                 >
                   Continue →
                 </button>
@@ -470,8 +509,8 @@ export default function PlannerChatPage() {
             </div>
           )}
 
-          {/* Step 5: Materials */}
-          {step >= 5 && (
+          {/* Step 6: Materials */}
+          {step >= 6 && (
             <div className="chat-bubble chat-bubble-assistant animate-fade-in">
               <p style={{ fontWeight: 600, marginBottom: "0.5rem", color: "var(--color-stone-900)" }}>
                 What materials do you have readily available?
@@ -519,12 +558,12 @@ export default function PlannerChatPage() {
                 Use only things most homes already have (no special purchases)
               </label>
 
-              {step === 5 && (
+              {step === 6 && (
                 <button
                   type="button"
-                  onClick={() => setStep(6)}
+                  onClick={() => setStep(7)}
                   className="btn btn-primary btn-sm"
-                  id="btn-next-step-5"
+                  id="btn-next-step-6"
                 >
                   Review & Generate →
                 </button>
@@ -532,8 +571,8 @@ export default function PlannerChatPage() {
             </div>
           )}
 
-          {/* Step 6: Plan Type & Final Generation */}
-          {step >= 6 && (
+          {/* Step 7: Plan Type & Final Generation */}
+          {step >= 7 && (
             <div className="chat-bubble chat-bubble-assistant animate-fade-in" style={{ border: "2px solid var(--color-sage-300)" }}>
               <p style={{ fontFamily: "'Outfit', sans-serif", fontSize: "1.125rem", fontWeight: 700, color: "var(--color-stone-900)", marginBottom: "0.5rem" }}>
                 Ready to generate your personalised activity plan!

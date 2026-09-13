@@ -37,6 +37,7 @@ interface FeedbackItem {
   rating: number;
   feedback: string;
   category: string;
+  resolved: number;
   created_at: string;
 }
 
@@ -89,6 +90,15 @@ export default function AdminPage() {
       body: JSON.stringify({ action: "update_status", chunkId, status }),
     });
     setChunks(chunks.map((c) => (c.id === chunkId ? { ...c, approval_status: status } : c)));
+  };
+
+  const handleResolveFeedback = async (feedbackId: number, resolved: boolean) => {
+    await fetch("/api/admin/feedback", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ feedbackId, resolved }),
+    });
+    setFeedbacks(feedbacks.map((f) => (f.id === feedbackId ? { ...f, resolved: resolved ? 1 : 0 } : f)));
   };
 
   const handleAddSource = async (e: React.FormEvent) => {
@@ -208,10 +218,11 @@ export default function AdminPage() {
                     <div
                       key={item.id}
                       style={{
-                        border: "1px solid var(--color-stone-200)",
+                        border: `1px solid ${item.resolved ? "var(--color-success)" : "var(--color-stone-200)"}`,
                         borderRadius: "var(--radius-md)",
                         padding: "1.25rem",
-                        background: "var(--color-cream-50)",
+                        background: item.resolved ? "rgba(34,197,94,0.04)" : "var(--color-cream-50)",
+                        opacity: item.resolved ? 0.8 : 1,
                       }}
                     >
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem", flexWrap: "wrap", gap: "0.5rem" }}>
@@ -232,10 +243,24 @@ export default function AdminPage() {
                           >
                             {item.category.replace(/_/g, " ")}
                           </span>
+                          {item.resolved ? (
+                            <span style={{ background: "var(--color-sage-100)", color: "var(--color-sage-700)", padding: "2px 8px", borderRadius: "10px", fontSize: "0.75rem", fontWeight: 600 }}>
+                              ✓ Resolved
+                            </span>
+                          ) : null}
                         </div>
-                        <span style={{ fontSize: "0.75rem", color: "var(--color-stone-400)" }}>
-                          {item.created_at ? new Date(item.created_at).toLocaleString() : "Just now"}
-                        </span>
+                        <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+                          <span style={{ fontSize: "0.75rem", color: "var(--color-stone-400)" }}>
+                            {item.created_at ? new Date(item.created_at).toLocaleString() : "Just now"}
+                          </span>
+                          <button
+                            onClick={() => handleResolveFeedback(item.id, !item.resolved)}
+                            className={`btn btn-sm ${item.resolved ? "btn-ghost" : "btn-secondary"}`}
+                            style={{ fontSize: "0.75rem", padding: "0.25rem 0.625rem" }}
+                          >
+                            {item.resolved ? "↩ Unresolve" : "✓ Mark Resolved"}
+                          </button>
+                        </div>
                       </div>
 
                       <p style={{ color: "var(--color-stone-800)", fontSize: "0.9375rem", lineHeight: 1.55, margin: "0.5rem 0" }}>

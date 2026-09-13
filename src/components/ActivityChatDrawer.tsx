@@ -10,6 +10,24 @@ interface Message {
   text: string;
 }
 
+/**
+ * Convert markdown-flavored text to safe HTML string.
+ * Handles **bold**, *italic*, \n newlines, and basic bullet lists.
+ */
+function parseMarkdown(text: string): string {
+  return text
+    // Bold
+    .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+    // Italic (single asterisk, but not double)
+    .replace(/(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)/g, "<em>$1</em>")
+    // Line breaks
+    .replace(/\n/g, "<br />")
+    // Bullet points (lines starting with - or *)
+    .replace(/^[\-\*] (.+)/gm, "<li>$1</li>")
+    // Wrap consecutive li's in ul
+    .replace(/(<li>[\s\S]*?<\/li>)/g, "<ul style='margin:0.5rem 0 0.5rem 1rem;padding:0'>$1</ul>");
+}
+
 interface ActivityChatDrawerProps {
   activity: PlannedActivity;
   childAge: string;
@@ -195,10 +213,10 @@ export default function ActivityChatDrawer({
                   lineHeight: 1.55,
                   boxShadow: msg.sender === "bot" ? "var(--shadow-sm)" : "none",
                   border: msg.sender === "bot" ? "1px solid var(--color-stone-200)" : "none",
-                  whiteSpace: "pre-wrap",
                 }}
+                dangerouslySetInnerHTML={msg.sender === "bot" ? { __html: parseMarkdown(msg.text) } : undefined}
               >
-                {msg.text}
+                {msg.sender === "user" ? msg.text : undefined}
               </div>
               <span style={{ fontSize: "0.6875rem", color: "var(--color-stone-400)", marginTop: "0.25rem", padding: "0 0.25rem" }}>
                 {msg.sender === "user" ? "You" : "Sprout Coach"}

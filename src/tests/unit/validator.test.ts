@@ -17,6 +17,7 @@ describe("Activity Validation Gates (Spec Section 22)", () => {
     energyLevel: "moderate",
     activitiesPerDay: 1,
     productType: "weekly",
+    playmatesCount: 0,
   };
 
   const validActivity: PlannedActivity = {
