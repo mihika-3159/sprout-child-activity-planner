@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:audit": "tsx src/tests/e2e-accuracy-audit.ts"
   },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",

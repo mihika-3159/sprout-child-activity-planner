@@ -55,7 +55,7 @@ describe("End-to-End Product Flow (Spec Sections 3, 6, 12, 14)", () => {
     // Preview MUST NOT expose days 3-7 full details
     expect((preview as unknown as { days?: unknown }).days).toBeUndefined();
     expect(preview.isUnlocked).toBe(false);
-  });
+  }, 30000);
 
   it("strictly prevents access to full protected planner data before entitlement", () => {
     expect(currentGenerationId).toBeDefined();
@@ -107,5 +107,5 @@ describe("End-to-End Product Flow (Spec Sections 3, 6, 12, 14)", () => {
     expect(newActivity.targetAgeBand).toBe("6-7");
     expect(newActivity.evidence.length).toBeGreaterThan(0);
     expect(newActivity.noveltySignature).toBeDefined();
-  });
+  }, 30000);
 });

@@ -358,8 +358,12 @@ class SproutDatabase {
       const feedbackId = Number(params[params.length - 1]);
       const entry = this.store.user_feedback.find((f) => f.id === feedbackId);
       if (entry) {
-        if (lower.includes("set resolved")) {
-          entry.resolved = params[0];
+        if (lower.includes("set resolved = 1")) {
+          entry.resolved = 1;
+        } else if (lower.includes("set resolved = 0")) {
+          entry.resolved = 0;
+        } else if (lower.includes("set resolved = ?") || lower.includes("set resolved =")) {
+          entry.resolved = Number(params[0]);
         }
       }
       return;

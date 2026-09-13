@@ -5,7 +5,7 @@
  * are NEVER displayed directly to parents or administrators.
  */
 
-const MATERIAL_LABELS: Record<string, string> = {
+export const MATERIAL_LABELS: Record<string, string> = {
   paper: "Plain Paper",
   pencils_crayons: "Pencils & Crayons",
   cardboard: "Cardboard Boxes & Scraps",
@@ -19,7 +19,7 @@ const MATERIAL_LABELS: Record<string, string> = {
   craft_supplies: "Craft Paper, Glue & Ribbons",
 };
 
-const GOAL_LABELS: Record<string, string> = {
+export const GOAL_LABELS: Record<string, string> = {
   independent_play: "Independent Play",
   creativity: "Creativity & Art",
   learning: "Curiosity & Early Learning",
@@ -35,7 +35,7 @@ const GOAL_LABELS: Record<string, string> = {
   winding_down: "Bedtime Winding Down",
 };
 
-const SUPERVISION_LABELS: Record<string, string> = {
+export const SUPERVISION_LABELS: Record<string, string> = {
   fully_independent: "Fully Independent",
   independent: "Independent Play",
   setup_then_independent: "Setup, Then Independent",
@@ -45,7 +45,7 @@ const SUPERVISION_LABELS: Record<string, string> = {
   parent_participation_fine: "Parent Participation Welcome",
 };
 
-const ENVIRONMENT_LABELS: Record<string, string> = {
+export const ENVIRONMENT_LABELS: Record<string, string> = {
   indoors: "Indoor Living Space",
   outdoors: "Outdoor / Backyard",
   either: "Flexible (Indoors or Outdoors)",
