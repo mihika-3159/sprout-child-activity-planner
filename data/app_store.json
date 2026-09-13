@@ -9478,10 +9478,429 @@
       "created_at": "2026-08-26T04:59:11.338Z"
     }
   },
-  "planner_generations": {},
-  "planner_activities": {},
-  "activity_fingerprints": [],
-  "purchase_entitlements": {},
-  "generation_audits": [],
-  "analytics_events": []
+  "planner_generations": {
+    "eed37338-91fe-4de8-aaa0-656eec4a093c": {
+      "id": "eed37338-91fe-4de8-aaa0-656eec4a093c",
+      "session_id": "test_flow_1789288500049",
+      "product_type": "weekly",
+      "status": "preview_ready",
+      "preferences": "{\"child\":{\"ageBand\":\"6-7\",\"numberOfChildren\":1,\"additionalChildAgeBands\":[]},\"interests\":[\"science\",\"building\"],\"customInterests\":[\"telescopes\"],\"goals\":[\"problem_solving\",\"creativity\"],\"environment\":\"indoors\",\"duration\":\"20-30\",\"parentInvolvement\":\"setup_then_independent\",\"prepTolerance\":\"under_5_min\",\"materials\":[\"paper\",\"cardboard\",\"tape\"],\"householdMaterialsOnly\":true,\"energyLevel\":\"moderate\",\"activitiesPerDay\":1,\"productType\":\"weekly\"}",
+      "created_at": "2026-09-13T08:35:00.093Z",
+      "preview_data": "{\"generationId\":\"eed37338-91fe-4de8-aaa0-656eec4a093c\",\"productType\":\"weekly\",\"targetAgeBand\":\"6-7\",\"preferencesSummary\":{\"ageBand\":\"6-7\",\"interests\":[\"science\",\"building\",\"telescopes\"],\"goals\":[\"problem_solving\",\"creativity\"],\"environment\":\"indoors\",\"duration\":\"20-30\",\"parentInvolvement\":\"setup_then_independent\",\"materials\":[\"paper\",\"cardboard\",\"tape\"]},\"day1Activity\":{\"id\":\"da4d3ef4-5b8d-4d3b-8cc4-76816479a74d\",\"title\":\"🧪 TEST: Paper Shape Sorting\",\"targetAgeBand\":\"6-7\",\"description\":\"TEST FIXTURE — NOT PRODUCTION EVIDENCE — This is a test fixture activity, not real AI output.\",\"instructions\":[\"Cut paper into different shapes\",\"Sort them by colour or shape\",\"Count how many of each type\"],\"materials\":[\"child_safe_scissors\",\"paper\",\"pencils_crayons\"],\"setupMinutes\":2,\"activityMinutes\":{\"min\":10,\"max\":20},\"supervisionLevel\":\"setup_then_independent\",\"parentSetup\":[\"Cut shapes beforehand for younger children\"],\"developmentalDomains\":[\"fine_motor\",\"numeracy\"],\"rationale\":\"TEST FIXTURE — NOT PRODUCTION EVIDENCE — In production this would cite approved evidence.\",\"whyEngaging\":\"Designed to ignite natural curiosity through open-ended tactile play.\",\"evidence\":[{\"sourceIds\":[\"pmc-pretend-play-exec-2020\",\"pmc-spatial-math-2021\"],\"chunkIds\":[\"pmc-pretend-narrative-1\",\"pmc-spatial-math-chunk-1\"],\"supportExplanation\":\"Grounded in Executive Function Through Complex Imaginative and Pretend Play (Bauer, P. J., & Pathman, T.). Supports fine_motor, numeracy.\"}],\"safetyNotes\":[],\"easyVariation\":\"Use stickers instead of cutting\",\"extension\":\"Create a pattern sequence\",\"noveltySignature\":\"f82a3536966ea6e8:paper,shape,sorting,test\",\"evidenceSupport\":{\"evidenceChunkIds\":[\"pmc-pretend-narrative-1\",\"pmc-spatial-math-chunk-1\"],\"supportedDomains\":[\"fine_motor\",\"numeracy\"],\"evidenceStrength\":\"strong\",\"claimsAllowed\":[\"fine_motor\",\"numeracy\"]}},\"day2Teaser\":{\"title\":\"Day 2: The Great Building Treasure Quest\",\"descriptionSnippet\":\"A fast-paced indoor detective hunt where your child hunts do...\",\"developmentalDomains\":[\"fine_motor\",\"numeracy\",\"problem_solving\"],\"estimatedMinutes\":30,\"setupMinutes\":2,\"supervisionLevel\":\"setup_then_independent\"},\"totalActivitiesCount\":7,\"materialsOverview\":[\"child_safe_scissors\",\"paper\",\"pencils_crayons\",\"cardboard\",\"tape\"],\"prepWeekSummary\":\"Set aside a shoebox or tray with: child_safe_scissors, paper, pencils_crayons, cardboard, tape. Lay these out once on Sunday evening to enable quick, independent activity starts all week.\",\"evidenceSummary\":\"All 7 days are grounded in peer-reviewed child development research from the CDC, AAP, and PMC Open Access, tailored for age band 6-7.\",\"isUnlocked\":false}",
+      "full_data": "{\"id\":\"eed37338-91fe-4de8-aaa0-656eec4a093c\",\"sessionId\":\"test_flow_1789288500049\",\"preferences\":{\"child\":{\"ageBand\":\"6-7\",\"numberOfChildren\":1,\"additionalChildAgeBands\":[]},\"interests\":[\"science\",\"building\"],\"customInterests\":[\"telescopes\"],\"goals\":[\"problem_solving\",\"creativity\"],\"environment\":\"indoors\",\"duration\":\"20-30\",\"parentInvolvement\":\"setup_then_independent\",\"prepTolerance\":\"under_5_min\",\"materials\":[\"paper\",\"cardboard\",\"tape\"],\"householdMaterialsOnly\":true,\"energyLevel\":\"moderate\",\"activitiesPerDay\":1,\"productType\":\"weekly\"},\"generatedAt\":\"2026-09-13T08:35:00.371Z\",\"days\":[{\"dayNumber\":1,\"activities\":[{\"id\":\"da4d3ef4-5b8d-4d3b-8cc4-76816479a74d\",\"title\":\"🧪 TEST: Paper Shape Sorting\",\"targetAgeBand\":\"6-7\",\"description\":\"TEST FIXTURE — NOT PRODUCTION EVIDENCE — This is a test fixture activity, not real AI output.\",\"instructions\":[\"Cut paper into different shapes\",\"Sort them by colour or shape\",\"Count how many of each type\"],\"materials\":[\"child_safe_scissors\",\"paper\",\"pencils_crayons\"],\"setupMinutes\":2,\"activityMinutes\":{\"min\":10,\"max\":20},\"supervisionLevel\":\"setup_then_independent\",\"parentSetup\":[\"Cut shapes beforehand for younger children\"],\"developmentalDomains\":[\"fine_motor\",\"numeracy\"],\"rationale\":\"TEST FIXTURE — NOT PRODUCTION EVIDENCE — In production this would cite approved evidence.\",\"whyEngaging\":\"Designed to ignite natural curiosity through open-ended tactile play.\",\"evidence\":[{\"sourceIds\":[\"pmc-pretend-play-exec-2020\",\"pmc-spatial-math-2021\"],\"chunkIds\":[\"pmc-pretend-narrative-1\",\"pmc-spatial-math-chunk-1\"],\"supportExplanation\":\"Grounded in Executive Function Through Complex Imaginative and Pretend Play (Bauer, P. J., & Pathman, T.). Supports fine_motor, numeracy.\"}],\"safetyNotes\":[],\"easyVariation\":\"Use stickers instead of cutting\",\"extension\":\"Create a pattern sequence\",\"noveltySignature\":\"f82a3536966ea6e8:paper,shape,sorting,test\",\"evidenceSupport\":{\"evidenceChunkIds\":[\"pmc-pretend-narrative-1\",\"pmc-spatial-math-chunk-1\"],\"supportedDomains\":[\"fine_motor\",\"numeracy\"],\"evidenceStrength\":\"strong\",\"claimsAllowed\":[\"fine_motor\",\"numeracy\"]}}]},{\"dayNumber\":2,\"activities\":[{\"id\":\"7cb58193-6e56-40f5-9eda-1fcfb63b63f6\",\"title\":\"Day 2: The Great Building Treasure Quest\",\"targetAgeBand\":\"6-7\",\"description\":\"A fast-paced indoor detective hunt where your child hunts down items matching mystery texture, color, and shape clues.\",\"instructions\":[\"Create 4 mystery clue cards (e.g. 'find something smooth as ice', 'find something greener than a frog', 'find something smaller than a coin').\",\"Arm your child with a detective collection bag or basket to seek out the mystery building clues around the room.\",\"Once items are gathered, lay them out on a table and inspect each one like a museum curator.\",\"Sort the treasures into categories: lightest to heaviest, or smoothest to bumpiest.\",\"Award the child their official 'Master Detective' badge drawn on a paper scrap.\"],\"materials\":[\"cardboard\",\"paper\",\"tape\"],\"setupMinutes\":2,\"activityMinutes\":{\"min\":15,\"max\":30},\"supervisionLevel\":\"setup_then_independent\",\"parentSetup\":[\"Hand the child a small bag, basket, or bowl to hold their treasure discoveries.\"],\"developmentalDomains\":[\"fine_motor\",\"numeracy\",\"problem_solving\"],\"rationale\":\"Fosters numeracy and problem solving and fine motor through open-ended screen-free play. Grounded in research from Spatial Assembly and Early Geometric Reasoning in Childhood.\",\"whyEngaging\":\"The thrill of the hunt and secret mission framing activates their imagination. Children adore searching their familiar environment with 'detective goggles' and feeling the pride of discovering hidden objects.\",\"evidence\":[{\"sourceIds\":[\"pmc-spatial-math-2021\"],\"chunkIds\":[\"pmc-spatial-math-chunk-1\"],\"supportExplanation\":\"Grounded in Spatial Assembly and Early Geometric Reasoning in Childhood (Verdine, B. N., Golinkoff, R. M., & Hirsh-Pasek, K., 2021).\"}],\"safetyNotes\":[\"Keep the hunt restricted to low, accessible shelves away from stairs or fragile items.\"],\"easyVariation\":\"Give simple one-word color targets (e.g. 'find 3 blue things') instead of multi-attribute clues.\",\"extension\":\"Hide a special golden coin or drawn paper key that unlocks a surprise secret story.\",\"noveltySignature\":\"archetype-d2-7cb58193:building\",\"evidenceSupport\":{\"evidenceChunkIds\":[\"pmc-spatial-math-chunk-1\"],\"supportedDomains\":[\"fine_motor\",\"numeracy\",\"problem_solving\"],\"evidenceStrength\":\"strong\",\"claimsAllowed\":[\"fine_motor\",\"numeracy\",\"problem_solving\"]}}]},{\"dayNumber\":3,\"activities\":[{\"id\":\"78cf1639-d2ef-47c1-9b14-de7a03746371\",\"title\":\"Day 3: Science Shadow & Puppet Theater\",\"targetAgeBand\":\"6-7\",\"description\":\"Transform a flashlight, paper drawings, and table into a miniature puppet stage where wild stories and voice acting come alive.\",\"instructions\":[\"Draw 2 or 3 distinct characters or critters inspired by science on sturdy paper.\",\"Carefully cut out the character silhouettes and tape them onto pencils, spoons, or straws as puppet handles.\",\"Dim the room lights and shine a flashlight or lamp against a blank wall or white sheet.\",\"Hold the puppets between the light and the wall, testing how moving closer or farther makes the shadows giant or tiny.\",\"Perform a mini 2-minute improvised show with silly sound effects and dramatic character voices.\"],\"materials\":[\"cardboard\",\"paper\",\"tape\"],\"setupMinutes\":3,\"activityMinutes\":{\"min\":20,\"max\":35},\"supervisionLevel\":\"setup_then_independent\",\"parentSetup\":[\"Clear a small table against a light-colored wall and position a desk lamp or flashlight safely.\"],\"developmentalDomains\":[\"creativity\",\"executive_function\",\"imaginative_play\"],\"rationale\":\"Fosters imaginative play and creativity and executive function through open-ended screen-free play. Grounded in research from Executive Function Through Complex Imaginative and Pretend Play.\",\"whyEngaging\":\"Puppetry gives children the power of storytelling without feeling self-conscious. Moving shadows around feels like real-time magic, and inventing silly voices encourages rich linguistic play.\",\"evidence\":[{\"sourceIds\":[\"pmc-pretend-play-exec-2020\"],\"chunkIds\":[\"pmc-pretend-narrative-1\"],\"supportExplanation\":\"Grounded in Executive Function Through Complex Imaginative and Pretend Play (Bauer, P. J., & Pathman, T., 2020).\"}],\"safetyNotes\":[\"Remind the child not to look directly into the flashlight beam.\"],\"easyVariation\":\"Use hand shadow shapes (bunny, bird, dinosaur jaw) instead of cutting out paper puppets.\",\"extension\":\"Add a narrator who introduces each act with a homemade drumroll using spoons on a container.\",\"noveltySignature\":\"archetype-d3-78cf1639:science\",\"evidenceSupport\":{\"evidenceChunkIds\":[\"pmc-pretend-narrative-1\"],\"supportedDomains\":[\"creativity\",\"executive_function\",\"imaginative_play\"],\"evidenceStrength\":\"strong\",\"claimsAllowed\":[\"creativity\",\"executive_function\",\"imaginative_play\"]}}]},{\"dayNumber\":4,\"activities\":[{\"id\":\"f8bfd6a9-9466-4060-8937-a672131d7498\",\"title\":\"Day 4: Building Color & Texture Wonder Lab\",\"targetAgeBand\":\"6-7\",\"description\":\"A hands-on exploratory experiment exploring capillary action, liquid drops, and texture mixing using common kitchen bowls.\",\"instructions\":[\"Fill 3 shallow bowls or cups with water; add a drop of food color or swirl washable markers on paper beforehand to create colored water.\",\"Dip folded paper towels or strips of paper into the water to watch the color magically climb up the fibers.\",\"Create a 'floating rescue mission' where small paper building cutouts are placed on the surface to see if they sink or float.\",\"Use a spoon or dropper to transfer drops from bowl to bowl, mixing brand new mystery colors.\",\"Dry the vibrant dyed paper strips to keep as colorful bookmarks or mosaic pieces.\"],\"materials\":[\"cardboard\",\"paper\",\"tape\"],\"setupMinutes\":4,\"activityMinutes\":{\"min\":15,\"max\":30},\"supervisionLevel\":\"periodic_checkin\",\"parentSetup\":[\"Lay down a towel or baking sheet to catch spills and set out 2-3 small cups of water.\"],\"developmentalDomains\":[\"fine_motor\",\"numeracy\",\"problem_solving\"],\"rationale\":\"Fosters numeracy and problem solving and fine motor through open-ended screen-free play. Grounded in research from Spatial Assembly and Early Geometric Reasoning in Childhood.\",\"whyEngaging\":\"Watching colors spread and water defy gravity creates pure sensory awe. Children love the cause-and-effect power of droppers, spoons, and making tangible physical transformations.\",\"evidence\":[{\"sourceIds\":[\"pmc-spatial-math-2021\"],\"chunkIds\":[\"pmc-spatial-math-chunk-1\"],\"supportExplanation\":\"Grounded in Spatial Assembly and Early Geometric Reasoning in Childhood (Verdine, B. N., Golinkoff, R. M., & Hirsh-Pasek, K., 2021).\"}],\"safetyNotes\":[\"Wipe up any spilled water quickly to prevent slippery floors.\"],\"easyVariation\":\"Use markers on coffee filters or paper towels and spray lightly with water to watch the tie-dye burst.\",\"extension\":\"Test what objects float versus sink (cork, coin, leaf, button) and chart guesses before dropping them in.\",\"noveltySignature\":\"archetype-d4-f8bfd6a9:building\",\"evidenceSupport\":{\"evidenceChunkIds\":[\"pmc-spatial-math-chunk-1\"],\"supportedDomains\":[\"fine_motor\",\"numeracy\",\"problem_solving\"],\"evidenceStrength\":\"strong\",\"claimsAllowed\":[\"fine_motor\",\"numeracy\",\"problem_solving\"]}}]},{\"dayNumber\":5,\"activities\":[{\"id\":\"646feea2-5256-47ac-a113-0c9c2ee65b77\",\"title\":\"Day 5: The Science Secret Floor Maze\",\"targetAgeBand\":\"6-7\",\"description\":\"Use masking tape or paper markers on the floor to design a thrilling balance course, agility maze, and jumping challenge.\",\"instructions\":[\"Lay out strips of painter's tape on the rug or floor creating straight lines, zig-zags, and circle islands.\",\"Place paper 'stepping stones' representing science safe zones across the room.\",\"Challenge the child to cross from one side of the room to the other walking strictly heel-to-toe along the lines.\",\"Add fun challenge stations: balance on one foot for 5 seconds, jump over 3 tape lines, or crawl under a dining chair tunnel.\",\"Time their run with a stopwatch or let them design a reverse route for you to test!\"],\"materials\":[\"cardboard\",\"paper\",\"tape\"],\"setupMinutes\":3,\"activityMinutes\":{\"min\":20,\"max\":40},\"supervisionLevel\":\"periodic_checkin\",\"parentSetup\":[\"Apply blue painter's or masking tape to a cleared patch of floor (safe on hardwood and carpets).\"],\"developmentalDomains\":[\"creativity\",\"executive_function\",\"imaginative_play\"],\"rationale\":\"Fosters imaginative play and creativity and executive function through open-ended screen-free play. Grounded in research from Executive Function Through Complex Imaginative and Pretend Play.\",\"whyEngaging\":\"This channels high physical energy into focused gross-motor balance. The 'floor is lava' suspense turns an ordinary living room into an adventurous obstacle arena where every step counts.\",\"evidence\":[{\"sourceIds\":[\"pmc-pretend-play-exec-2020\"],\"chunkIds\":[\"pmc-pretend-narrative-1\"],\"supportExplanation\":\"Grounded in Executive Function Through Complex Imaginative and Pretend Play (Bauer, P. J., & Pathman, T., 2020).\"}],\"safetyNotes\":[\"Ensure shoes or bare feet have good traction, and move sharp furniture corners aside.\"],\"easyVariation\":\"Make wide, simple straight tape pathways with large landing cushions rather than narrow balance lines.\",\"extension\":\"Carry a small plastic egg or ping-pong ball on a spoon through the whole maze without dropping it.\",\"noveltySignature\":\"archetype-d5-646feea2:science\",\"evidenceSupport\":{\"evidenceChunkIds\":[\"pmc-pretend-narrative-1\"],\"supportedDomains\":[\"creativity\",\"executive_function\",\"imaginative_play\"],\"evidenceStrength\":\"strong\",\"claimsAllowed\":[\"creativity\",\"executive_function\",\"imaginative_play\"]}}]},{\"dayNumber\":6,\"activities\":[{\"id\":\"01fc20de-17a4-4e48-9cb7-397684dfaf2f\",\"title\":\"Day 6: Building Mosaic & Nature Rubbing Workshop\",\"targetAgeBand\":\"6-7\",\"description\":\"A rich tactile art session combining paper ripping, texture rubbings over leaves or coins, and assembling a vibrant mosaic collage.\",\"instructions\":[\"Gather interesting textured surfaces: embossed book covers, corrugated cardboard, leaves, or coins.\",\"Place blank paper over the textures and rub firmly with the side of a crayon to reveal hidden relief patterns.\",\"Tear colorful construction paper or junk mail into thumb-sized geometric mosaic tiles.\",\"Glue or arrange the torn tiles and texture rubbings to assemble a magnificent building masterpiece.\",\"Sign the corner with their artist signature and hang it proudly on the refrigerator gallery.\"],\"materials\":[\"cardboard\",\"paper\",\"tape\"],\"setupMinutes\":2,\"activityMinutes\":{\"min\":20,\"max\":35},\"supervisionLevel\":\"setup_then_independent\",\"parentSetup\":[\"Set out scrap papers, a few coins or leaves, unwrapped crayons, and a glue stick.\"],\"developmentalDomains\":[\"fine_motor\",\"numeracy\",\"problem_solving\"],\"rationale\":\"Fosters numeracy and problem solving and fine motor through open-ended screen-free play. Grounded in research from Spatial Assembly and Early Geometric Reasoning in Childhood.\",\"whyEngaging\":\"Ripping paper is intensely satisfying sensory feedback that relieves stress while strengthening fine motor grip. Revealing hidden textures under crayons feels like uncovering hidden dinosaur fossils or secret prints.\",\"evidence\":[{\"sourceIds\":[\"pmc-spatial-math-2021\"],\"chunkIds\":[\"pmc-spatial-math-chunk-1\"],\"supportExplanation\":\"Grounded in Spatial Assembly and Early Geometric Reasoning in Childhood (Verdine, B. N., Golinkoff, R. M., & Hirsh-Pasek, K., 2021).\"}],\"safetyNotes\":[\"Encourage controlled paper tearing on the craft mat.\"],\"easyVariation\":\"Stick with texture rubbings alone, experimenting with as many coins and outdoor leaves as possible.\",\"extension\":\"Create a 3D collage by folding little paper accordions or flaps that open to reveal hidden surprises.\",\"noveltySignature\":\"archetype-d6-01fc20de:building\",\"evidenceSupport\":{\"evidenceChunkIds\":[\"pmc-spatial-math-chunk-1\"],\"supportedDomains\":[\"fine_motor\",\"numeracy\",\"problem_solving\"],\"evidenceStrength\":\"strong\",\"claimsAllowed\":[\"fine_motor\",\"numeracy\",\"problem_solving\"]}}]},{\"dayNumber\":7,\"activities\":[{\"id\":\"91eaad1c-3eb4-47e0-8e1e-62feb30228d7\",\"title\":\"Day 7: The Grand Science Exhibition & Museum Tour\",\"targetAgeBand\":\"6-7\",\"description\":\"Curate all of the week's creations into a weekend living-room museum, complete with tickets, tour guide storytelling, and ribbon cutting.\",\"instructions\":[\"Gather all the artworks, cardboard structures, and discoveries created throughout the week.\",\"Arrange each piece on tables, shelves, or rugs with custom hand-written exhibit labels.\",\"Design 2 VIP museum entrance tickets on paper scraps to hand to family members.\",\"Cut a paper ribbon taped across the doorway to officially inaugurate the museum opening.\",\"Guide the family on a guided tour, explaining how each project was built and answering visitor questions.\"],\"materials\":[\"cardboard\",\"paper\",\"tape\"],\"setupMinutes\":3,\"activityMinutes\":{\"min\":25,\"max\":45},\"supervisionLevel\":\"parent_participation_fine\",\"parentSetup\":[\"Help clear tabletop or shelf space to display the child's creations.\"],\"developmentalDomains\":[\"creativity\",\"executive_function\",\"imaginative_play\"],\"rationale\":\"Fosters imaginative play and creativity and executive function through open-ended screen-free play. Grounded in research from Executive Function Through Complex Imaginative and Pretend Play.\",\"whyEngaging\":\"Children relish holding the spotlight as the expert tour guide. Celebrating their hard work from the week fosters immense confidence, reflection, and pride in their own capabilities.\",\"evidence\":[{\"sourceIds\":[\"pmc-pretend-play-exec-2020\"],\"chunkIds\":[\"pmc-pretend-narrative-1\"],\"supportExplanation\":\"Grounded in Executive Function Through Complex Imaginative and Pretend Play (Bauer, P. J., & Pathman, T., 2020).\"}],\"safetyNotes\":[\"Ensure walking paths through the home museum are clear and uncluttered.\"],\"easyVariation\":\"Focus the exhibition on 2 favorite pieces with an oral storytelling show-and-tell.\",\"extension\":\"Create an audio tour: record the child explaining each exhibit on your phone's voice recorder to replay!\",\"noveltySignature\":\"archetype-d7-91eaad1c:science\",\"evidenceSupport\":{\"evidenceChunkIds\":[\"pmc-pretend-narrative-1\"],\"supportedDomains\":[\"creativity\",\"executive_function\",\"imaginative_play\"],\"evidenceStrength\":\"strong\",\"claimsAllowed\":[\"creativity\",\"executive_function\",\"imaginative_play\"]}}]}],\"materialsOverview\":[\"child_safe_scissors\",\"paper\",\"pencils_crayons\",\"cardboard\",\"tape\"],\"prepWeekIn10Minutes\":\"Set aside a shoebox or tray with: child_safe_scissors, paper, pencils_crayons, cardboard, tape. Lay these out once on Sunday evening to enable quick, independent activity starts all week.\",\"evidenceSummary\":\"All 7 days are grounded in peer-reviewed child development research from the CDC, AAP, and PMC Open Access, tailored for age band 6-7.\"}"
+    }
+  },
+  "planner_activities": {
+    "da4d3ef4-5b8d-4d3b-8cc4-76816479a74d": {
+      "id": "da4d3ef4-5b8d-4d3b-8cc4-76816479a74d",
+      "generation_id": "eed37338-91fe-4de8-aaa0-656eec4a093c",
+      "day_number": 1,
+      "activity_data": "{\"id\":\"da4d3ef4-5b8d-4d3b-8cc4-76816479a74d\",\"title\":\"🧪 TEST: Paper Shape Sorting\",\"targetAgeBand\":\"6-7\",\"description\":\"TEST FIXTURE — NOT PRODUCTION EVIDENCE — This is a test fixture activity, not real AI output.\",\"instructions\":[\"Cut paper into different shapes\",\"Sort them by colour or shape\",\"Count how many of each type\"],\"materials\":[\"child_safe_scissors\",\"paper\",\"pencils_crayons\"],\"setupMinutes\":2,\"activityMinutes\":{\"min\":10,\"max\":20},\"supervisionLevel\":\"setup_then_independent\",\"parentSetup\":[\"Cut shapes beforehand for younger children\"],\"developmentalDomains\":[\"fine_motor\",\"numeracy\"],\"rationale\":\"TEST FIXTURE — NOT PRODUCTION EVIDENCE — In production this would cite approved evidence.\",\"whyEngaging\":\"Designed to ignite natural curiosity through open-ended tactile play.\",\"evidence\":[{\"sourceIds\":[\"pmc-pretend-play-exec-2020\",\"pmc-spatial-math-2021\"],\"chunkIds\":[\"pmc-pretend-narrative-1\",\"pmc-spatial-math-chunk-1\"],\"supportExplanation\":\"Grounded in Executive Function Through Complex Imaginative and Pretend Play (Bauer, P. J., & Pathman, T.). Supports fine_motor, numeracy.\"}],\"safetyNotes\":[],\"easyVariation\":\"Use stickers instead of cutting\",\"extension\":\"Create a pattern sequence\",\"noveltySignature\":\"f82a3536966ea6e8:paper,shape,sorting,test\",\"evidenceSupport\":{\"evidenceChunkIds\":[\"pmc-pretend-narrative-1\",\"pmc-spatial-math-chunk-1\"],\"supportedDomains\":[\"fine_motor\",\"numeracy\"],\"evidenceStrength\":\"strong\",\"claimsAllowed\":[\"fine_motor\",\"numeracy\"]}}",
+      "novelty_signature": "f82a3536966ea6e8:paper,shape,sorting,test",
+      "created_at": "2026-09-13T08:35:00.137Z"
+    },
+    "7cb58193-6e56-40f5-9eda-1fcfb63b63f6": {
+      "id": "7cb58193-6e56-40f5-9eda-1fcfb63b63f6",
+      "generation_id": "eed37338-91fe-4de8-aaa0-656eec4a093c",
+      "day_number": 2,
+      "activity_data": "{\"id\":\"7cb58193-6e56-40f5-9eda-1fcfb63b63f6\",\"title\":\"Day 2: The Great Building Treasure Quest\",\"targetAgeBand\":\"6-7\",\"description\":\"A fast-paced indoor detective hunt where your child hunts down items matching mystery texture, color, and shape clues.\",\"instructions\":[\"Create 4 mystery clue cards (e.g. 'find something smooth as ice', 'find something greener than a frog', 'find something smaller than a coin').\",\"Arm your child with a detective collection bag or basket to seek out the mystery building clues around the room.\",\"Once items are gathered, lay them out on a table and inspect each one like a museum curator.\",\"Sort the treasures into categories: lightest to heaviest, or smoothest to bumpiest.\",\"Award the child their official 'Master Detective' badge drawn on a paper scrap.\"],\"materials\":[\"cardboard\",\"paper\",\"tape\"],\"setupMinutes\":2,\"activityMinutes\":{\"min\":15,\"max\":30},\"supervisionLevel\":\"setup_then_independent\",\"parentSetup\":[\"Hand the child a small bag, basket, or bowl to hold their treasure discoveries.\"],\"developmentalDomains\":[\"fine_motor\",\"numeracy\",\"problem_solving\"],\"rationale\":\"Fosters numeracy and problem solving and fine motor through open-ended screen-free play. Grounded in research from Spatial Assembly and Early Geometric Reasoning in Childhood.\",\"whyEngaging\":\"The thrill of the hunt and secret mission framing activates their imagination. Children adore searching their familiar environment with 'detective goggles' and feeling the pride of discovering hidden objects.\",\"evidence\":[{\"sourceIds\":[\"pmc-spatial-math-2021\"],\"chunkIds\":[\"pmc-spatial-math-chunk-1\"],\"supportExplanation\":\"Grounded in Spatial Assembly and Early Geometric Reasoning in Childhood (Verdine, B. N., Golinkoff, R. M., & Hirsh-Pasek, K., 2021).\"}],\"safetyNotes\":[\"Keep the hunt restricted to low, accessible shelves away from stairs or fragile items.\"],\"easyVariation\":\"Give simple one-word color targets (e.g. 'find 3 blue things') instead of multi-attribute clues.\",\"extension\":\"Hide a special golden coin or drawn paper key that unlocks a surprise secret story.\",\"noveltySignature\":\"archetype-d2-7cb58193:building\",\"evidenceSupport\":{\"evidenceChunkIds\":[\"pmc-spatial-math-chunk-1\"],\"supportedDomains\":[\"fine_motor\",\"numeracy\",\"problem_solving\"],\"evidenceStrength\":\"strong\",\"claimsAllowed\":[\"fine_motor\",\"numeracy\",\"problem_solving\"]}}",
+      "novelty_signature": "archetype-d2-7cb58193:building",
+      "created_at": "2026-09-13T08:35:00.185Z"
+    },
+    "78cf1639-d2ef-47c1-9b14-de7a03746371": {
+      "id": "78cf1639-d2ef-47c1-9b14-de7a03746371",
+      "generation_id": "eed37338-91fe-4de8-aaa0-656eec4a093c",
+      "day_number": 3,
+      "activity_data": "{\"id\":\"78cf1639-d2ef-47c1-9b14-de7a03746371\",\"title\":\"Day 3: Science Shadow & Puppet Theater\",\"targetAgeBand\":\"6-7\",\"description\":\"Transform a flashlight, paper drawings, and table into a miniature puppet stage where wild stories and voice acting come alive.\",\"instructions\":[\"Draw 2 or 3 distinct characters or critters inspired by science on sturdy paper.\",\"Carefully cut out the character silhouettes and tape them onto pencils, spoons, or straws as puppet handles.\",\"Dim the room lights and shine a flashlight or lamp against a blank wall or white sheet.\",\"Hold the puppets between the light and the wall, testing how moving closer or farther makes the shadows giant or tiny.\",\"Perform a mini 2-minute improvised show with silly sound effects and dramatic character voices.\"],\"materials\":[\"cardboard\",\"paper\",\"tape\"],\"setupMinutes\":3,\"activityMinutes\":{\"min\":20,\"max\":35},\"supervisionLevel\":\"setup_then_independent\",\"parentSetup\":[\"Clear a small table against a light-colored wall and position a desk lamp or flashlight safely.\"],\"developmentalDomains\":[\"creativity\",\"executive_function\",\"imaginative_play\"],\"rationale\":\"Fosters imaginative play and creativity and executive function through open-ended screen-free play. Grounded in research from Executive Function Through Complex Imaginative and Pretend Play.\",\"whyEngaging\":\"Puppetry gives children the power of storytelling without feeling self-conscious. Moving shadows around feels like real-time magic, and inventing silly voices encourages rich linguistic play.\",\"evidence\":[{\"sourceIds\":[\"pmc-pretend-play-exec-2020\"],\"chunkIds\":[\"pmc-pretend-narrative-1\"],\"supportExplanation\":\"Grounded in Executive Function Through Complex Imaginative and Pretend Play (Bauer, P. J., & Pathman, T., 2020).\"}],\"safetyNotes\":[\"Remind the child not to look directly into the flashlight beam.\"],\"easyVariation\":\"Use hand shadow shapes (bunny, bird, dinosaur jaw) instead of cutting out paper puppets.\",\"extension\":\"Add a narrator who introduces each act with a homemade drumroll using spoons on a container.\",\"noveltySignature\":\"archetype-d3-78cf1639:science\",\"evidenceSupport\":{\"evidenceChunkIds\":[\"pmc-pretend-narrative-1\"],\"supportedDomains\":[\"creativity\",\"executive_function\",\"imaginative_play\"],\"evidenceStrength\":\"strong\",\"claimsAllowed\":[\"creativity\",\"executive_function\",\"imaginative_play\"]}}",
+      "novelty_signature": "archetype-d3-78cf1639:science",
+      "created_at": "2026-09-13T08:35:00.230Z"
+    },
+    "f8bfd6a9-9466-4060-8937-a672131d7498": {
+      "id": "f8bfd6a9-9466-4060-8937-a672131d7498",
+      "generation_id": "eed37338-91fe-4de8-aaa0-656eec4a093c",
+      "day_number": 4,
+      "activity_data": "{\"id\":\"f8bfd6a9-9466-4060-8937-a672131d7498\",\"title\":\"Day 4: Building Color & Texture Wonder Lab\",\"targetAgeBand\":\"6-7\",\"description\":\"A hands-on exploratory experiment exploring capillary action, liquid drops, and texture mixing using common kitchen bowls.\",\"instructions\":[\"Fill 3 shallow bowls or cups with water; add a drop of food color or swirl washable markers on paper beforehand to create colored water.\",\"Dip folded paper towels or strips of paper into the water to watch the color magically climb up the fibers.\",\"Create a 'floating rescue mission' where small paper building cutouts are placed on the surface to see if they sink or float.\",\"Use a spoon or dropper to transfer drops from bowl to bowl, mixing brand new mystery colors.\",\"Dry the vibrant dyed paper strips to keep as colorful bookmarks or mosaic pieces.\"],\"materials\":[\"cardboard\",\"paper\",\"tape\"],\"setupMinutes\":4,\"activityMinutes\":{\"min\":15,\"max\":30},\"supervisionLevel\":\"periodic_checkin\",\"parentSetup\":[\"Lay down a towel or baking sheet to catch spills and set out 2-3 small cups of water.\"],\"developmentalDomains\":[\"fine_motor\",\"numeracy\",\"problem_solving\"],\"rationale\":\"Fosters numeracy and problem solving and fine motor through open-ended screen-free play. Grounded in research from Spatial Assembly and Early Geometric Reasoning in Childhood.\",\"whyEngaging\":\"Watching colors spread and water defy gravity creates pure sensory awe. Children love the cause-and-effect power of droppers, spoons, and making tangible physical transformations.\",\"evidence\":[{\"sourceIds\":[\"pmc-spatial-math-2021\"],\"chunkIds\":[\"pmc-spatial-math-chunk-1\"],\"supportExplanation\":\"Grounded in Spatial Assembly and Early Geometric Reasoning in Childhood (Verdine, B. N., Golinkoff, R. M., & Hirsh-Pasek, K., 2021).\"}],\"safetyNotes\":[\"Wipe up any spilled water quickly to prevent slippery floors.\"],\"easyVariation\":\"Use markers on coffee filters or paper towels and spray lightly with water to watch the tie-dye burst.\",\"extension\":\"Test what objects float versus sink (cork, coin, leaf, button) and chart guesses before dropping them in.\",\"noveltySignature\":\"archetype-d4-f8bfd6a9:building\",\"evidenceSupport\":{\"evidenceChunkIds\":[\"pmc-spatial-math-chunk-1\"],\"supportedDomains\":[\"fine_motor\",\"numeracy\",\"problem_solving\"],\"evidenceStrength\":\"strong\",\"claimsAllowed\":[\"fine_motor\",\"numeracy\",\"problem_solving\"]}}",
+      "novelty_signature": "archetype-d4-f8bfd6a9:building",
+      "created_at": "2026-09-13T08:35:00.264Z"
+    },
+    "646feea2-5256-47ac-a113-0c9c2ee65b77": {
+      "id": "646feea2-5256-47ac-a113-0c9c2ee65b77",
+      "generation_id": "eed37338-91fe-4de8-aaa0-656eec4a093c",
+      "day_number": 5,
+      "activity_data": "{\"id\":\"646feea2-5256-47ac-a113-0c9c2ee65b77\",\"title\":\"Day 5: The Science Secret Floor Maze\",\"targetAgeBand\":\"6-7\",\"description\":\"Use masking tape or paper markers on the floor to design a thrilling balance course, agility maze, and jumping challenge.\",\"instructions\":[\"Lay out strips of painter's tape on the rug or floor creating straight lines, zig-zags, and circle islands.\",\"Place paper 'stepping stones' representing science safe zones across the room.\",\"Challenge the child to cross from one side of the room to the other walking strictly heel-to-toe along the lines.\",\"Add fun challenge stations: balance on one foot for 5 seconds, jump over 3 tape lines, or crawl under a dining chair tunnel.\",\"Time their run with a stopwatch or let them design a reverse route for you to test!\"],\"materials\":[\"cardboard\",\"paper\",\"tape\"],\"setupMinutes\":3,\"activityMinutes\":{\"min\":20,\"max\":40},\"supervisionLevel\":\"periodic_checkin\",\"parentSetup\":[\"Apply blue painter's or masking tape to a cleared patch of floor (safe on hardwood and carpets).\"],\"developmentalDomains\":[\"creativity\",\"executive_function\",\"imaginative_play\"],\"rationale\":\"Fosters imaginative play and creativity and executive function through open-ended screen-free play. Grounded in research from Executive Function Through Complex Imaginative and Pretend Play.\",\"whyEngaging\":\"This channels high physical energy into focused gross-motor balance. The 'floor is lava' suspense turns an ordinary living room into an adventurous obstacle arena where every step counts.\",\"evidence\":[{\"sourceIds\":[\"pmc-pretend-play-exec-2020\"],\"chunkIds\":[\"pmc-pretend-narrative-1\"],\"supportExplanation\":\"Grounded in Executive Function Through Complex Imaginative and Pretend Play (Bauer, P. J., & Pathman, T., 2020).\"}],\"safetyNotes\":[\"Ensure shoes or bare feet have good traction, and move sharp furniture corners aside.\"],\"easyVariation\":\"Make wide, simple straight tape pathways with large landing cushions rather than narrow balance lines.\",\"extension\":\"Carry a small plastic egg or ping-pong ball on a spoon through the whole maze without dropping it.\",\"noveltySignature\":\"archetype-d5-646feea2:science\",\"evidenceSupport\":{\"evidenceChunkIds\":[\"pmc-pretend-narrative-1\"],\"supportedDomains\":[\"creativity\",\"executive_function\",\"imaginative_play\"],\"evidenceStrength\":\"strong\",\"claimsAllowed\":[\"creativity\",\"executive_function\",\"imaginative_play\"]}}",
+      "novelty_signature": "archetype-d5-646feea2:science",
+      "created_at": "2026-09-13T08:35:00.294Z"
+    },
+    "01fc20de-17a4-4e48-9cb7-397684dfaf2f": {
+      "id": "01fc20de-17a4-4e48-9cb7-397684dfaf2f",
+      "generation_id": "eed37338-91fe-4de8-aaa0-656eec4a093c",
+      "day_number": 6,
+      "activity_data": "{\"id\":\"01fc20de-17a4-4e48-9cb7-397684dfaf2f\",\"title\":\"Day 6: Building Mosaic & Nature Rubbing Workshop\",\"targetAgeBand\":\"6-7\",\"description\":\"A rich tactile art session combining paper ripping, texture rubbings over leaves or coins, and assembling a vibrant mosaic collage.\",\"instructions\":[\"Gather interesting textured surfaces: embossed book covers, corrugated cardboard, leaves, or coins.\",\"Place blank paper over the textures and rub firmly with the side of a crayon to reveal hidden relief patterns.\",\"Tear colorful construction paper or junk mail into thumb-sized geometric mosaic tiles.\",\"Glue or arrange the torn tiles and texture rubbings to assemble a magnificent building masterpiece.\",\"Sign the corner with their artist signature and hang it proudly on the refrigerator gallery.\"],\"materials\":[\"cardboard\",\"paper\",\"tape\"],\"setupMinutes\":2,\"activityMinutes\":{\"min\":20,\"max\":35},\"supervisionLevel\":\"setup_then_independent\",\"parentSetup\":[\"Set out scrap papers, a few coins or leaves, unwrapped crayons, and a glue stick.\"],\"developmentalDomains\":[\"fine_motor\",\"numeracy\",\"problem_solving\"],\"rationale\":\"Fosters numeracy and problem solving and fine motor through open-ended screen-free play. Grounded in research from Spatial Assembly and Early Geometric Reasoning in Childhood.\",\"whyEngaging\":\"Ripping paper is intensely satisfying sensory feedback that relieves stress while strengthening fine motor grip. Revealing hidden textures under crayons feels like uncovering hidden dinosaur fossils or secret prints.\",\"evidence\":[{\"sourceIds\":[\"pmc-spatial-math-2021\"],\"chunkIds\":[\"pmc-spatial-math-chunk-1\"],\"supportExplanation\":\"Grounded in Spatial Assembly and Early Geometric Reasoning in Childhood (Verdine, B. N., Golinkoff, R. M., & Hirsh-Pasek, K., 2021).\"}],\"safetyNotes\":[\"Encourage controlled paper tearing on the craft mat.\"],\"easyVariation\":\"Stick with texture rubbings alone, experimenting with as many coins and outdoor leaves as possible.\",\"extension\":\"Create a 3D collage by folding little paper accordions or flaps that open to reveal hidden surprises.\",\"noveltySignature\":\"archetype-d6-01fc20de:building\",\"evidenceSupport\":{\"evidenceChunkIds\":[\"pmc-spatial-math-chunk-1\"],\"supportedDomains\":[\"fine_motor\",\"numeracy\",\"problem_solving\"],\"evidenceStrength\":\"strong\",\"claimsAllowed\":[\"fine_motor\",\"numeracy\",\"problem_solving\"]}}",
+      "novelty_signature": "archetype-d6-01fc20de:building",
+      "created_at": "2026-09-13T08:35:00.334Z"
+    },
+    "91eaad1c-3eb4-47e0-8e1e-62feb30228d7": {
+      "id": "91eaad1c-3eb4-47e0-8e1e-62feb30228d7",
+      "generation_id": "eed37338-91fe-4de8-aaa0-656eec4a093c",
+      "day_number": 7,
+      "activity_data": "{\"id\":\"91eaad1c-3eb4-47e0-8e1e-62feb30228d7\",\"title\":\"Day 7: The Grand Science Exhibition & Museum Tour\",\"targetAgeBand\":\"6-7\",\"description\":\"Curate all of the week's creations into a weekend living-room museum, complete with tickets, tour guide storytelling, and ribbon cutting.\",\"instructions\":[\"Gather all the artworks, cardboard structures, and discoveries created throughout the week.\",\"Arrange each piece on tables, shelves, or rugs with custom hand-written exhibit labels.\",\"Design 2 VIP museum entrance tickets on paper scraps to hand to family members.\",\"Cut a paper ribbon taped across the doorway to officially inaugurate the museum opening.\",\"Guide the family on a guided tour, explaining how each project was built and answering visitor questions.\"],\"materials\":[\"cardboard\",\"paper\",\"tape\"],\"setupMinutes\":3,\"activityMinutes\":{\"min\":25,\"max\":45},\"supervisionLevel\":\"parent_participation_fine\",\"parentSetup\":[\"Help clear tabletop or shelf space to display the child's creations.\"],\"developmentalDomains\":[\"creativity\",\"executive_function\",\"imaginative_play\"],\"rationale\":\"Fosters imaginative play and creativity and executive function through open-ended screen-free play. Grounded in research from Executive Function Through Complex Imaginative and Pretend Play.\",\"whyEngaging\":\"Children relish holding the spotlight as the expert tour guide. Celebrating their hard work from the week fosters immense confidence, reflection, and pride in their own capabilities.\",\"evidence\":[{\"sourceIds\":[\"pmc-pretend-play-exec-2020\"],\"chunkIds\":[\"pmc-pretend-narrative-1\"],\"supportExplanation\":\"Grounded in Executive Function Through Complex Imaginative and Pretend Play (Bauer, P. J., & Pathman, T., 2020).\"}],\"safetyNotes\":[\"Ensure walking paths through the home museum are clear and uncluttered.\"],\"easyVariation\":\"Focus the exhibition on 2 favorite pieces with an oral storytelling show-and-tell.\",\"extension\":\"Create an audio tour: record the child explaining each exhibit on your phone's voice recorder to replay!\",\"noveltySignature\":\"archetype-d7-91eaad1c:science\",\"evidenceSupport\":{\"evidenceChunkIds\":[\"pmc-pretend-narrative-1\"],\"supportedDomains\":[\"creativity\",\"executive_function\",\"imaginative_play\"],\"evidenceStrength\":\"strong\",\"claimsAllowed\":[\"creativity\",\"executive_function\",\"imaginative_play\"]}}",
+      "novelty_signature": "archetype-d7-91eaad1c:science",
+      "created_at": "2026-09-13T08:35:00.363Z"
+    }
+  },
+  "activity_fingerprints": [
+    {
+      "session_id": "test_flow_1789288500049",
+      "fingerprint": "f82a3536966ea6e8:paper,shape,sorting,test",
+      "concept_hash": "2f1dd405f8fd36bf",
+      "activity_title": "🧪 TEST: Paper Shape Sorting",
+      "created_at": "2026-09-13T08:35:00.133Z"
+    },
+    {
+      "session_id": "test_flow_1789288500049",
+      "fingerprint": "archetype-d2-7cb58193:building",
+      "concept_hash": "b5a3ef8317feb879",
+      "activity_title": "Day 2: The Great Building Treasure Quest",
+      "created_at": "2026-09-13T08:35:00.174Z"
+    },
+    {
+      "session_id": "test_flow_1789288500049",
+      "fingerprint": "archetype-d3-78cf1639:science",
+      "concept_hash": "c4aee7602b39614c",
+      "activity_title": "Day 3: Science Shadow & Puppet Theater",
+      "created_at": "2026-09-13T08:35:00.224Z"
+    },
+    {
+      "session_id": "test_flow_1789288500049",
+      "fingerprint": "archetype-d4-f8bfd6a9:building",
+      "concept_hash": "b5a3ef8317feb879",
+      "activity_title": "Day 4: Building Color & Texture Wonder Lab",
+      "created_at": "2026-09-13T08:35:00.259Z"
+    },
+    {
+      "session_id": "test_flow_1789288500049",
+      "fingerprint": "archetype-d5-646feea2:science",
+      "concept_hash": "c4aee7602b39614c",
+      "activity_title": "Day 5: The Science Secret Floor Maze",
+      "created_at": "2026-09-13T08:35:00.290Z"
+    },
+    {
+      "session_id": "test_flow_1789288500049",
+      "fingerprint": "archetype-d6-01fc20de:building",
+      "concept_hash": "b5a3ef8317feb879",
+      "activity_title": "Day 6: Building Mosaic & Nature Rubbing Workshop",
+      "created_at": "2026-09-13T08:35:00.329Z"
+    },
+    {
+      "session_id": "test_flow_1789288500049",
+      "fingerprint": "archetype-d7-91eaad1c:science",
+      "concept_hash": "c4aee7602b39614c",
+      "activity_title": "Day 7: The Grand Science Exhibition & Museum Tour",
+      "created_at": "2026-09-13T08:35:00.357Z"
+    },
+    {
+      "session_id": "test_flow_1789288500049",
+      "fingerprint": "archetype-d3-aaec9da2:science",
+      "concept_hash": "c4aee7602b39614c",
+      "activity_title": "Day 3: Science Shadow & Puppet Theater",
+      "created_at": "2026-09-13T08:35:00.424Z"
+    }
+  ],
+  "purchase_entitlements": {
+    "645c841f-9da2-4fb8-b176-21d97cc5ab2a": {
+      "id": "645c841f-9da2-4fb8-b176-21d97cc5ab2a",
+      "session_id": "session-paid-1789288480870",
+      "generation_id": "gen-paid-1789288480870",
+      "provider_transaction_id": "tx_mock_1789288480870",
+      "product_type": "weekly",
+      "payment_status": "paid",
+      "purchase_timestamp": "2026-09-13T08:34:40.872Z"
+    },
+    "a65f2070-6644-48fb-ad59-976957163850": {
+      "id": "a65f2070-6644-48fb-ad59-976957163850",
+      "session_id": "session-isolated-1789288480884",
+      "generation_id": "gen-isolated-1789288480884",
+      "provider_transaction_id": "tx_iso_1789288480884",
+      "product_type": "monthly",
+      "payment_status": "paid",
+      "purchase_timestamp": "2026-09-13T08:34:40.884Z"
+    },
+    "d8877295-1ef9-4354-a341-21e176a6593d": {
+      "id": "d8877295-1ef9-4354-a341-21e176a6593d",
+      "session_id": "test_flow_1789288500049",
+      "generation_id": "eed37338-91fe-4de8-aaa0-656eec4a093c",
+      "provider_transaction_id": "tx_flow_1789288500385",
+      "product_type": "weekly",
+      "payment_status": "paid",
+      "purchase_timestamp": "2026-09-13T08:35:00.386Z"
+    }
+  },
+  "generation_audits": [
+    {
+      "id": 1,
+      "activity_id": "da4d3ef4-5b8d-4d3b-8cc4-76816479a74d",
+      "session_id": "test_flow_1789288500049",
+      "anonymized_preferences": "{\"age\":\"6-7\",\"goals\":[\"problem_solving\",\"creativity\"]}",
+      "retrieved_chunk_ids": "[\"pmc-pretend-narrative-1\",\"pmc-spatial-math-chunk-1\"]",
+      "evidence_scores": "[{\"id\":\"pmc-pretend-narrative-1\",\"score\":0.42436829942774185},{\"id\":\"pmc-spatial-math-chunk-1\",\"score\":0.1725343146508755}]",
+      "safety_classification": "setup_then_independent",
+      "grounding_validation_result": "passed",
+      "rejection_reason": null,
+      "created_at": "2026-09-13T08:35:00.128Z"
+    },
+    {
+      "id": 2,
+      "activity_id": "a53a538b-602e-4e83-9bee-c751b27fcec2",
+      "session_id": "test_flow_1789288500049",
+      "anonymized_preferences": "{\"age\":\"6-7\",\"goals\":[\"problem_solving\",\"creativity\"]}",
+      "retrieved_chunk_ids": "[\"pmc-pretend-narrative-1\",\"pmc-spatial-math-chunk-1\"]",
+      "evidence_scores": "[{\"id\":\"pmc-pretend-narrative-1\",\"score\":0.4193823319250847},{\"id\":\"pmc-spatial-math-chunk-1\",\"score\":0.1791283433974199}]",
+      "safety_classification": "setup_then_independent",
+      "grounding_validation_result": "failed_novelty",
+      "rejection_reason": "Activity doesn't clearly address any requested goal; Too similar to recently generated activity: \"🧪 TEST: Paper Shape Sorting\"",
+      "created_at": "2026-09-13T08:35:00.148Z"
+    },
+    {
+      "id": 3,
+      "activity_id": "d7af1274-7968-4182-b6a5-ccd1bd955291",
+      "session_id": "test_flow_1789288500049",
+      "anonymized_preferences": "{\"age\":\"6-7\",\"goals\":[\"problem_solving\",\"creativity\"]}",
+      "retrieved_chunk_ids": "[\"pmc-pretend-narrative-1\",\"pmc-spatial-math-chunk-1\"]",
+      "evidence_scores": "[{\"id\":\"pmc-pretend-narrative-1\",\"score\":0.4193823319250847},{\"id\":\"pmc-spatial-math-chunk-1\",\"score\":0.1791283433974199}]",
+      "safety_classification": "setup_then_independent",
+      "grounding_validation_result": "failed_novelty",
+      "rejection_reason": "Activity doesn't clearly address any requested goal; Too similar to recently generated activity: \"🧪 TEST: Paper Shape Sorting\"",
+      "created_at": "2026-09-13T08:35:00.159Z"
+    },
+    {
+      "id": 4,
+      "activity_id": "1ce7a95a-0538-492e-860d-eb7e8a20b537",
+      "session_id": "test_flow_1789288500049",
+      "anonymized_preferences": "{\"age\":\"6-7\",\"goals\":[\"problem_solving\",\"creativity\"]}",
+      "retrieved_chunk_ids": "[\"pmc-pretend-narrative-1\",\"pmc-spatial-math-chunk-1\"]",
+      "evidence_scores": "[{\"id\":\"pmc-pretend-narrative-1\",\"score\":0.4193823319250847},{\"id\":\"pmc-spatial-math-chunk-1\",\"score\":0.1791283433974199}]",
+      "safety_classification": "setup_then_independent",
+      "grounding_validation_result": "failed_novelty",
+      "rejection_reason": "Activity doesn't clearly address any requested goal; Too similar to recently generated activity: \"🧪 TEST: Paper Shape Sorting\"",
+      "created_at": "2026-09-13T08:35:00.167Z"
+    },
+    {
+      "id": 5,
+      "activity_id": "66a0ef25-6c97-42ad-9ecb-9de0c1f4ce13",
+      "session_id": "test_flow_1789288500049",
+      "anonymized_preferences": "{\"age\":\"6-7\",\"goals\":[\"problem_solving\",\"creativity\"]}",
+      "retrieved_chunk_ids": "[\"pmc-pretend-narrative-1\",\"pmc-spatial-math-chunk-1\"]",
+      "evidence_scores": "[{\"id\":\"pmc-pretend-narrative-1\",\"score\":0.42436829942774185},{\"id\":\"pmc-spatial-math-chunk-1\",\"score\":0.1725343146508755}]",
+      "safety_classification": "setup_then_independent",
+      "grounding_validation_result": "failed_novelty",
+      "rejection_reason": "Activity doesn't clearly address any requested goal; Too similar to recently generated activity: \"🧪 TEST: Paper Shape Sorting\"",
+      "created_at": "2026-09-13T08:35:00.198Z"
+    },
+    {
+      "id": 6,
+      "activity_id": "4d150ea9-2483-4cd9-92df-23f1f1e7fb49",
+      "session_id": "test_flow_1789288500049",
+      "anonymized_preferences": "{\"age\":\"6-7\",\"goals\":[\"problem_solving\",\"creativity\"]}",
+      "retrieved_chunk_ids": "[\"pmc-pretend-narrative-1\",\"pmc-spatial-math-chunk-1\"]",
+      "evidence_scores": "[{\"id\":\"pmc-pretend-narrative-1\",\"score\":0.42436829942774185},{\"id\":\"pmc-spatial-math-chunk-1\",\"score\":0.1725343146508755}]",
+      "safety_classification": "setup_then_independent",
+      "grounding_validation_result": "failed_novelty",
+      "rejection_reason": "Activity doesn't clearly address any requested goal; Too similar to recently generated activity: \"🧪 TEST: Paper Shape Sorting\"",
+      "created_at": "2026-09-13T08:35:00.208Z"
+    },
+    {
+      "id": 7,
+      "activity_id": "99d34ec4-fbe3-44b5-b5cb-79bf095aa37b",
+      "session_id": "test_flow_1789288500049",
+      "anonymized_preferences": "{\"age\":\"6-7\",\"goals\":[\"problem_solving\",\"creativity\"]}",
+      "retrieved_chunk_ids": "[\"pmc-pretend-narrative-1\",\"pmc-spatial-math-chunk-1\"]",
+      "evidence_scores": "[{\"id\":\"pmc-pretend-narrative-1\",\"score\":0.42436829942774185},{\"id\":\"pmc-spatial-math-chunk-1\",\"score\":0.1725343146508755}]",
+      "safety_classification": "setup_then_independent",
+      "grounding_validation_result": "failed_novelty",
+      "rejection_reason": "Activity doesn't clearly address any requested goal; Too similar to recently generated activity: \"🧪 TEST: Paper Shape Sorting\"",
+      "created_at": "2026-09-13T08:35:00.216Z"
+    },
+    {
+      "id": 8,
+      "activity_id": "c50c94a6-5a9f-4b4f-972f-25fe9a3f5357",
+      "session_id": "test_flow_1789288500049",
+      "anonymized_preferences": "{\"age\":\"6-7\",\"goals\":[\"problem_solving\",\"creativity\"]}",
+      "retrieved_chunk_ids": "[\"pmc-pretend-narrative-1\",\"pmc-spatial-math-chunk-1\"]",
+      "evidence_scores": "[{\"id\":\"pmc-pretend-narrative-1\",\"score\":0.4193823319250847},{\"id\":\"pmc-spatial-math-chunk-1\",\"score\":0.1791283433974199}]",
+      "safety_classification": "setup_then_independent",
+      "grounding_validation_result": "failed_novelty",
+      "rejection_reason": "Activity doesn't clearly address any requested goal; Too similar to recently generated activity: \"🧪 TEST: Paper Shape Sorting\"",
+      "created_at": "2026-09-13T08:35:00.237Z"
+    },
+    {
+      "id": 9,
+      "activity_id": "f6280acf-5701-4536-8573-a513f53ba0b2",
+      "session_id": "test_flow_1789288500049",
+      "anonymized_preferences": "{\"age\":\"6-7\",\"goals\":[\"problem_solving\",\"creativity\"]}",
+      "retrieved_chunk_ids": "[\"pmc-pretend-narrative-1\",\"pmc-spatial-math-chunk-1\"]",
+      "evidence_scores": "[{\"id\":\"pmc-pretend-narrative-1\",\"score\":0.4193823319250847},{\"id\":\"pmc-spatial-math-chunk-1\",\"score\":0.1791283433974199}]",
+      "safety_classification": "setup_then_independent",
+      "grounding_validation_result": "failed_novelty",
+      "rejection_reason": "Activity doesn't clearly address any requested goal; Too similar to recently generated activity: \"🧪 TEST: Paper Shape Sorting\"",
+      "created_at": "2026-09-13T08:35:00.244Z"
+    },
+    {
+      "id": 10,
+      "activity_id": "49fe64aa-49a7-4738-a159-0a9e9892a33e",
+      "session_id": "test_flow_1789288500049",
+      "anonymized_preferences": "{\"age\":\"6-7\",\"goals\":[\"problem_solving\",\"creativity\"]}",
+      "retrieved_chunk_ids": "[\"pmc-pretend-narrative-1\",\"pmc-spatial-math-chunk-1\"]",
+      "evidence_scores": "[{\"id\":\"pmc-pretend-narrative-1\",\"score\":0.4193823319250847},{\"id\":\"pmc-spatial-math-chunk-1\",\"score\":0.1791283433974199}]",
+      "safety_classification": "setup_then_independent",
+      "grounding_validation_result": "failed_novelty",
+      "rejection_reason": "Activity doesn't clearly address any requested goal; Too similar to recently generated activity: \"🧪 TEST: Paper Shape Sorting\"",
+      "created_at": "2026-09-13T08:35:00.249Z"
+    },
+    {
+      "id": 11,
+      "activity_id": "7a6fefdd-28b6-4749-a9ff-1fbc3307afc0",
+      "session_id": "test_flow_1789288500049",
+      "anonymized_preferences": "{\"age\":\"6-7\",\"goals\":[\"problem_solving\",\"creativity\"]}",
+      "retrieved_chunk_ids": "[\"pmc-pretend-narrative-1\",\"pmc-spatial-math-chunk-1\"]",
+      "evidence_scores": "[{\"id\":\"pmc-pretend-narrative-1\",\"score\":0.42436829942774185},{\"id\":\"pmc-spatial-math-chunk-1\",\"score\":0.1725343146508755}]",
+      "safety_classification": "setup_then_independent",
+      "grounding_validation_result": "failed_novelty",
+      "rejection_reason": "Activity doesn't clearly address any requested goal; Too similar to recently generated activity: \"🧪 TEST: Paper Shape Sorting\"",
+      "created_at": "2026-09-13T08:35:00.270Z"
+    },
+    {
+      "id": 12,
+      "activity_id": "8bc8be5e-074e-4745-a198-64001abeb684",
+      "session_id": "test_flow_1789288500049",
+      "anonymized_preferences": "{\"age\":\"6-7\",\"goals\":[\"problem_solving\",\"creativity\"]}",
+      "retrieved_chunk_ids": "[\"pmc-pretend-narrative-1\",\"pmc-spatial-math-chunk-1\"]",
+      "evidence_scores": "[{\"id\":\"pmc-pretend-narrative-1\",\"score\":0.42436829942774185},{\"id\":\"pmc-spatial-math-chunk-1\",\"score\":0.1725343146508755}]",
+      "safety_classification": "setup_then_independent",
+      "grounding_validation_result": "failed_novelty",
+      "rejection_reason": "Activity doesn't clearly address any requested goal; Too similar to recently generated activity: \"🧪 TEST: Paper Shape Sorting\"",
+      "created_at": "2026-09-13T08:35:00.278Z"
+    },
+    {
+      "id": 13,
+      "activity_id": "c95551e4-7d91-4391-82d9-1dd53f022868",
+      "session_id": "test_flow_1789288500049",
+      "anonymized_preferences": "{\"age\":\"6-7\",\"goals\":[\"problem_solving\",\"creativity\"]}",
+      "retrieved_chunk_ids": "[\"pmc-pretend-narrative-1\",\"pmc-spatial-math-chunk-1\"]",
+      "evidence_scores": "[{\"id\":\"pmc-pretend-narrative-1\",\"score\":0.42436829942774185},{\"id\":\"pmc-spatial-math-chunk-1\",\"score\":0.1725343146508755}]",
+      "safety_classification": "setup_then_independent",
+      "grounding_validation_result": "failed_novelty",
+      "rejection_reason": "Activity doesn't clearly address any requested goal; Too similar to recently generated activity: \"🧪 TEST: Paper Shape Sorting\"",
+      "created_at": "2026-09-13T08:35:00.283Z"
+    },
+    {
+      "id": 14,
+      "activity_id": "e507324a-8cde-4f9b-946e-a0f9f4e3d700",
+      "session_id": "test_flow_1789288500049",
+      "anonymized_preferences": "{\"age\":\"6-7\",\"goals\":[\"problem_solving\",\"creativity\"]}",
+      "retrieved_chunk_ids": "[\"pmc-pretend-narrative-1\",\"pmc-spatial-math-chunk-1\"]",
+      "evidence_scores": "[{\"id\":\"pmc-pretend-narrative-1\",\"score\":0.4193823319250847},{\"id\":\"pmc-spatial-math-chunk-1\",\"score\":0.1791283433974199}]",
+      "safety_classification": "setup_then_independent",
+      "grounding_validation_result": "failed_novelty",
+      "rejection_reason": "Activity doesn't clearly address any requested goal; Too similar to recently generated activity: \"🧪 TEST: Paper Shape Sorting\"",
+      "created_at": "2026-09-13T08:35:00.304Z"
+    },
+    {
+      "id": 15,
+      "activity_id": "456927ce-824a-42ec-8d3a-ecec41543438",
+      "session_id": "test_flow_1789288500049",
+      "anonymized_preferences": "{\"age\":\"6-7\",\"goals\":[\"problem_solving\",\"creativity\"]}",
+      "retrieved_chunk_ids": "[\"pmc-pretend-narrative-1\",\"pmc-spatial-math-chunk-1\"]",
+      "evidence_scores": "[{\"id\":\"pmc-pretend-narrative-1\",\"score\":0.4193823319250847},{\"id\":\"pmc-spatial-math-chunk-1\",\"score\":0.1791283433974199}]",
+      "safety_classification": "setup_then_independent",
+      "grounding_validation_result": "failed_novelty",
+      "rejection_reason": "Activity doesn't clearly address any requested goal; Too similar to recently generated activity: \"🧪 TEST: Paper Shape Sorting\"",
+      "created_at": "2026-09-13T08:35:00.311Z"
+    },
+    {
+      "id": 16,
+      "activity_id": "b3cbf6db-1b02-4037-bbfc-b2569b137ebd",
+      "session_id": "test_flow_1789288500049",
+      "anonymized_preferences": "{\"age\":\"6-7\",\"goals\":[\"problem_solving\",\"creativity\"]}",
+      "retrieved_chunk_ids": "[\"pmc-pretend-narrative-1\",\"pmc-spatial-math-chunk-1\"]",
+      "evidence_scores": "[{\"id\":\"pmc-pretend-narrative-1\",\"score\":0.4193823319250847},{\"id\":\"pmc-spatial-math-chunk-1\",\"score\":0.1791283433974199}]",
+      "safety_classification": "setup_then_independent",
+      "grounding_validation_result": "failed_novelty",
+      "rejection_reason": "Activity doesn't clearly address any requested goal; Too similar to recently generated activity: \"🧪 TEST: Paper Shape Sorting\"",
+      "created_at": "2026-09-13T08:35:00.318Z"
+    },
+    {
+      "id": 17,
+      "activity_id": "7e2e2781-034c-4570-ae17-da70adaed598",
+      "session_id": "test_flow_1789288500049",
+      "anonymized_preferences": "{\"age\":\"6-7\",\"goals\":[\"problem_solving\",\"creativity\"]}",
+      "retrieved_chunk_ids": "[\"pmc-pretend-narrative-1\",\"pmc-spatial-math-chunk-1\"]",
+      "evidence_scores": "[{\"id\":\"pmc-pretend-narrative-1\",\"score\":0.42436829942774185},{\"id\":\"pmc-spatial-math-chunk-1\",\"score\":0.1725343146508755}]",
+      "safety_classification": "setup_then_independent",
+      "grounding_validation_result": "failed_novelty",
+      "rejection_reason": "Activity doesn't clearly address any requested goal; Too similar to recently generated activity: \"🧪 TEST: Paper Shape Sorting\"",
+      "created_at": "2026-09-13T08:35:00.341Z"
+    },
+    {
+      "id": 18,
+      "activity_id": "e827c75f-317b-4fde-898d-d7935ed0aa0a",
+      "session_id": "test_flow_1789288500049",
+      "anonymized_preferences": "{\"age\":\"6-7\",\"goals\":[\"problem_solving\",\"creativity\"]}",
+      "retrieved_chunk_ids": "[\"pmc-pretend-narrative-1\",\"pmc-spatial-math-chunk-1\"]",
+      "evidence_scores": "[{\"id\":\"pmc-pretend-narrative-1\",\"score\":0.42436829942774185},{\"id\":\"pmc-spatial-math-chunk-1\",\"score\":0.1725343146508755}]",
+      "safety_classification": "setup_then_independent",
+      "grounding_validation_result": "failed_novelty",
+      "rejection_reason": "Activity doesn't clearly address any requested goal; Too similar to recently generated activity: \"🧪 TEST: Paper Shape Sorting\"",
+      "created_at": "2026-09-13T08:35:00.346Z"
+    },
+    {
+      "id": 19,
+      "activity_id": "1b79f2b7-9f7a-4b23-a6c0-2b5f1d6dfbaa",
+      "session_id": "test_flow_1789288500049",
+      "anonymized_preferences": "{\"age\":\"6-7\",\"goals\":[\"problem_solving\",\"creativity\"]}",
+      "retrieved_chunk_ids": "[\"pmc-pretend-narrative-1\",\"pmc-spatial-math-chunk-1\"]",
+      "evidence_scores": "[{\"id\":\"pmc-pretend-narrative-1\",\"score\":0.42436829942774185},{\"id\":\"pmc-spatial-math-chunk-1\",\"score\":0.1725343146508755}]",
+      "safety_classification": "setup_then_independent",
+      "grounding_validation_result": "failed_novelty",
+      "rejection_reason": "Activity doesn't clearly address any requested goal; Too similar to recently generated activity: \"🧪 TEST: Paper Shape Sorting\"",
+      "created_at": "2026-09-13T08:35:00.351Z"
+    },
+    {
+      "id": 20,
+      "activity_id": "b67fa479-48ac-49aa-a351-58d3e8628020",
+      "session_id": "test_flow_1789288500049",
+      "anonymized_preferences": "{\"age\":\"6-7\",\"goals\":[\"problem_solving\",\"creativity\"]}",
+      "retrieved_chunk_ids": "[\"pmc-pretend-narrative-1\",\"pmc-spatial-math-chunk-1\"]",
+      "evidence_scores": "[{\"id\":\"pmc-pretend-narrative-1\",\"score\":0.42436829942774185},{\"id\":\"pmc-spatial-math-chunk-1\",\"score\":0.1725343146508755}]",
+      "safety_classification": "setup_then_independent",
+      "grounding_validation_result": "failed_novelty",
+      "rejection_reason": "Activity doesn't clearly address any requested goal; Too similar to recently generated activity: \"🧪 TEST: Paper Shape Sorting\"",
+      "created_at": "2026-09-13T08:35:00.402Z"
+    },
+    {
+      "id": 21,
+      "activity_id": "262aaede-78f1-49c1-ba71-3150766610d0",
+      "session_id": "test_flow_1789288500049",
+      "anonymized_preferences": "{\"age\":\"6-7\",\"goals\":[\"problem_solving\",\"creativity\"]}",
+      "retrieved_chunk_ids": "[\"pmc-pretend-narrative-1\",\"pmc-spatial-math-chunk-1\"]",
+      "evidence_scores": "[{\"id\":\"pmc-pretend-narrative-1\",\"score\":0.42436829942774185},{\"id\":\"pmc-spatial-math-chunk-1\",\"score\":0.1725343146508755}]",
+      "safety_classification": "setup_then_independent",
+      "grounding_validation_result": "failed_novelty",
+      "rejection_reason": "Activity doesn't clearly address any requested goal; Too similar to recently generated activity: \"🧪 TEST: Paper Shape Sorting\"",
+      "created_at": "2026-09-13T08:35:00.411Z"
+    },
+    {
+      "id": 22,
+      "activity_id": "5e7f7209-ec9f-44ab-9704-74f373938170",
+      "session_id": "test_flow_1789288500049",
+      "anonymized_preferences": "{\"age\":\"6-7\",\"goals\":[\"problem_solving\",\"creativity\"]}",
+      "retrieved_chunk_ids": "[\"pmc-pretend-narrative-1\",\"pmc-spatial-math-chunk-1\"]",
+      "evidence_scores": "[{\"id\":\"pmc-pretend-narrative-1\",\"score\":0.42436829942774185},{\"id\":\"pmc-spatial-math-chunk-1\",\"score\":0.1725343146508755}]",
+      "safety_classification": "setup_then_independent",
+      "grounding_validation_result": "failed_novelty",
+      "rejection_reason": "Activity doesn't clearly address any requested goal; Too similar to recently generated activity: \"🧪 TEST: Paper Shape Sorting\"",
+      "created_at": "2026-09-13T08:35:00.418Z"
+    }
+  ],
+  "analytics_events": [],
+  "user_feedback": []
 }

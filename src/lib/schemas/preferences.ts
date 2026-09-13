@@ -186,6 +186,7 @@ export const PlannedActivitySchema = z.object({
   parentSetup: z.array(z.string()).max(6),
   developmentalDomains: z.array(z.string()).min(1).max(5),
   rationale: z.string().min(20).max(600),
+  whyEngaging: z.string().max(600).optional(),
   evidence: z.array(
     z.object({
       sourceIds: z.array(z.string()),

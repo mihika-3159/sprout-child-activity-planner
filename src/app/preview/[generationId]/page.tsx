@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { PlannerPreviewPayload } from "@/lib/generation/composer";
 import { formatPrice, getProduct } from "@/lib/config/products";
+import { formatMaterial, formatGoal, formatSupervision, humanize } from "@/lib/utils/formatters";
 
 export default function PreviewPage() {
   const params = useParams();
@@ -223,8 +224,8 @@ export default function PreviewPage() {
               </div>
               <div style={{ background: "var(--color-cream)", borderRadius: "var(--radius-sm)", padding: "0.75rem", textAlign: "center" }}>
                 <p style={{ fontSize: "0.75rem", color: "var(--color-stone-500)" }}>Independence</p>
-                <p style={{ fontWeight: 700, fontFamily: "'Outfit', sans-serif", textTransform: "capitalize" }}>
-                  {day1Activity.supervisionLevel.replace(/_/g, " ")}
+                <p style={{ fontWeight: 700, fontFamily: "'Outfit', sans-serif" }}>
+                  {formatSupervision(day1Activity.supervisionLevel)}
                 </p>
               </div>
             </div>
@@ -259,7 +260,7 @@ export default function PreviewPage() {
                       color: "var(--color-stone-600)",
                     }}
                   >
-                    {mat}
+                    {formatMaterial(mat)}
                   </span>
                 ))}
               </div>
@@ -274,14 +275,14 @@ export default function PreviewPage() {
           </h2>
           <div className="card" style={{ padding: "1.5rem", borderLeft: "4px solid var(--color-sage-400)" }}>
             <h3 style={{ fontFamily: "'Outfit', sans-serif", fontSize: "1.25rem", marginBottom: "0.25rem" }}>
-              {day2Teaser.title}
+              {day2Teaser.title.replace(/_/g, " ")}
             </h3>
             <p style={{ color: "var(--color-stone-500)", fontSize: "0.875rem", marginBottom: "0.75rem" }}>
-              {day2Teaser.descriptionSnippet}
+              {day2Teaser.descriptionSnippet.replace(/_/g, " ")}
             </p>
-            <div style={{ display: "flex", gap: "0.5rem" }}>
+            <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
               <span className="evidence-badge evidence-badge-moderate">
-                {day2Teaser.developmentalDomains.join(" · ")}
+                {day2Teaser.developmentalDomains.map((d) => formatGoal(d)).join(" · ")}
               </span>
               <span style={{ fontSize: "0.75rem", color: "var(--color-stone-400)", alignSelf: "center" }}>
                 ~{day2Teaser.estimatedMinutes} min duration

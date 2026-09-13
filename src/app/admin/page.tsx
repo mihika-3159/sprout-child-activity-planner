@@ -31,11 +31,23 @@ interface AuditItem {
   created_at: string;
 }
 
+interface FeedbackItem {
+  id: number;
+  session_id: string;
+  rating: number;
+  feedback: string;
+  category: string;
+  created_at: string;
+}
+
 export default function AdminPage() {
   const [sources, setSources] = useState<SourceItem[]>([]);
   const [chunks, setChunks] = useState<ChunkItem[]>([]);
   const [audits, setAudits] = useState<AuditItem[]>([]);
-  const [activeTab, setActiveTab] = useState<"evidence" | "audits" | "cost">("evidence");
+  const [feedbacks, setFeedbacks] = useState<FeedbackItem[]>([]);
+  const [avgRating, setAvgRating] = useState<number>(5.0);
+  const [adminEmail, setAdminEmail] = useState<string>("mihika3109@gmail.com");
+  const [activeTab, setActiveTab] = useState<"feedback" | "evidence" | "audits" | "cost">("feedback");
   const [loading, setLoading] = useState(true);
 
   // New source form state
@@ -46,15 +58,21 @@ export default function AdminPage() {
   useEffect(() => {
     async function loadData() {
       try {
-        const [evRes, auditRes] = await Promise.all([
+        const [evRes, auditRes, fbRes] = await Promise.all([
           fetch("/api/admin/evidence"),
           fetch("/api/admin/audits"),
+          fetch("/api/admin/feedback"),
         ]);
         const evData = await evRes.json();
         const auditData = await auditRes.json();
+        const fbData = await fbRes.json();
+
         setSources(evData.sources || []);
         setChunks(evData.chunks || []);
         setAudits(auditData.audits || []);
+        setFeedbacks(fbData.feedback || []);
+        if (fbData.averageRating) setAvgRating(fbData.averageRating);
+        if (fbData.adminAccount) setAdminEmail(fbData.adminAccount);
       } catch (err) {
         console.error("Admin load error:", err);
       } finally {
@@ -108,8 +126,8 @@ export default function AdminPage() {
             <Link href="/" style={{ color: "white", textDecoration: "none", fontWeight: 800, fontFamily: "'Outfit', sans-serif" }}>
               🌱 Sprout Admin
             </Link>
-            <span style={{ fontSize: "0.75rem", background: "rgba(255,255,255,0.2)", padding: "2px 8px", borderRadius: "10px" }}>
-              Evidence & Safety Portal
+            <span style={{ fontSize: "0.75rem", background: "rgba(255,255,255,0.15)", padding: "3px 10px", borderRadius: "10px", color: "var(--color-amber-200)" }}>
+              Admin: <strong>{adminEmail}</strong>
             </span>
           </div>
           <Link href="/" className="btn btn-ghost btn-sm" style={{ color: "white" }}>
@@ -120,12 +138,18 @@ export default function AdminPage() {
 
       <main className="container" style={{ paddingTop: "2rem" }}>
         {/* Navigation Tabs */}
-        <div style={{ display: "flex", gap: "0.5rem", borderBottom: "1px solid var(--color-stone-300)", marginBottom: "2rem" }}>
+        <div style={{ display: "flex", gap: "0.5rem", borderBottom: "1px solid var(--color-stone-300)", marginBottom: "2rem", flexWrap: "wrap" }}>
+          <button
+            onClick={() => setActiveTab("feedback")}
+            className={`btn btn-sm ${activeTab === "feedback" ? "btn-primary" : "btn-ghost"}`}
+          >
+            💬 User Feedback & Beta Reviews ({feedbacks.length})
+          </button>
           <button
             onClick={() => setActiveTab("evidence")}
             className={`btn btn-sm ${activeTab === "evidence" ? "btn-primary" : "btn-ghost"}`}
           >
-            📚 Evidence Corpus & Sources ({chunks.length})
+            📚 Evidence Corpus ({chunks.length})
           </button>
           <button
             onClick={() => setActiveTab("audits")}
@@ -137,9 +161,97 @@ export default function AdminPage() {
             onClick={() => setActiveTab("cost")}
             className={`btn btn-sm ${activeTab === "cost" ? "btn-primary" : "btn-ghost"}`}
           >
-            💰 Zero-Cost Infrastructure Audit
+            💰 Infrastructure Audit
           </button>
         </div>
+
+        {/* Tab 0: User Feedback & Beta Reviews */}
+        {activeTab === "feedback" && (
+          <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+            {/* Feedback Stats */}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "1rem" }}>
+              <div className="card" style={{ padding: "1.25rem", background: "white" }}>
+                <p style={{ fontSize: "0.8125rem", color: "var(--color-stone-500)", marginBottom: "0.25rem" }}>Total Submissions</p>
+                <h3 style={{ fontSize: "1.75rem", fontFamily: "'Outfit', sans-serif", color: "var(--color-stone-900)" }}>{feedbacks.length}</h3>
+              </div>
+              <div className="card" style={{ padding: "1.25rem", background: "white" }}>
+                <p style={{ fontSize: "0.8125rem", color: "var(--color-stone-500)", marginBottom: "0.25rem" }}>Average Star Rating</p>
+                <h3 style={{ fontSize: "1.75rem", fontFamily: "'Outfit', sans-serif", color: "var(--color-amber-600)" }}>
+                  ★ {avgRating} / 5.0
+                </h3>
+              </div>
+              <div className="card" style={{ padding: "1.25rem", background: "white" }}>
+                <p style={{ fontSize: "0.8125rem", color: "var(--color-stone-500)", marginBottom: "0.25rem" }}>Admin Access Level</p>
+                <h3 style={{ fontSize: "1rem", fontFamily: "'Outfit', sans-serif", color: "var(--color-sage-700)", marginTop: "0.5rem" }}>
+                  Primary Admin ({adminEmail})
+                </h3>
+              </div>
+            </div>
+
+            {/* Feedback Table */}
+            <div className="card" style={{ padding: "1.5rem", background: "white" }}>
+              <h3 style={{ fontFamily: "'Outfit', sans-serif", fontSize: "1.125rem", marginBottom: "0.5rem" }}>
+                Community Feedback Entries
+              </h3>
+              <p style={{ fontSize: "0.875rem", color: "var(--color-stone-500)", marginBottom: "1.25rem" }}>
+                Direct responses from parents testing the Sprout Activity Planner in live demo and production.
+              </p>
+
+              {feedbacks.length === 0 ? (
+                <div style={{ padding: "2.5rem 1rem", textAlign: "center", color: "var(--color-stone-400)" }}>
+                  <p style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>🌱</p>
+                  <p>No user feedback entries recorded yet.</p>
+                </div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+                  {feedbacks.map((item) => (
+                    <div
+                      key={item.id}
+                      style={{
+                        border: "1px solid var(--color-stone-200)",
+                        borderRadius: "var(--radius-md)",
+                        padding: "1.25rem",
+                        background: "var(--color-cream-50)",
+                      }}
+                    >
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem", flexWrap: "wrap", gap: "0.5rem" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                          <span style={{ color: "var(--color-amber-500)", fontWeight: 700, fontSize: "1.125rem" }}>
+                            {"★".repeat(item.rating)}{"☆".repeat(Math.max(0, 5 - item.rating))}
+                          </span>
+                          <span
+                            style={{
+                              background: "var(--color-sage-100)",
+                              color: "var(--color-sage-800)",
+                              padding: "2px 8px",
+                              borderRadius: "10px",
+                              fontSize: "0.75rem",
+                              fontWeight: 600,
+                              textTransform: "capitalize",
+                            }}
+                          >
+                            {item.category.replace(/_/g, " ")}
+                          </span>
+                        </div>
+                        <span style={{ fontSize: "0.75rem", color: "var(--color-stone-400)" }}>
+                          {item.created_at ? new Date(item.created_at).toLocaleString() : "Just now"}
+                        </span>
+                      </div>
+
+                      <p style={{ color: "var(--color-stone-800)", fontSize: "0.9375rem", lineHeight: 1.55, margin: "0.5rem 0" }}>
+                        {item.feedback || <em style={{ color: "var(--color-stone-400)" }}>No written comment provided.</em>}
+                      </p>
+
+                      <div style={{ fontSize: "0.75rem", color: "var(--color-stone-400)", marginTop: "0.5rem" }}>
+                        Session: <code>{item.session_id ? item.session_id.slice(0, 10) + "..." : "anonymous"}</code>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Tab 1: Evidence Corpus Management */}
         {activeTab === "evidence" && (

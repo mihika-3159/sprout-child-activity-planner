@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { WeeklyPlanner, MonthlyPlanner, PlannedActivity } from "@/lib/schemas/preferences";
 import FeedbackWidget from "@/components/FeedbackWidget";
+import ActivityChatDrawer from "@/components/ActivityChatDrawer";
+import { formatMaterial, formatSupervision, formatGoal, humanize } from "@/lib/utils/formatters";
 
 export default function FullPlannerPage() {
   const params = useParams();
@@ -19,6 +21,7 @@ export default function FullPlannerPage() {
   const [error, setError] = useState<string | null>(null);
   const [activeEvidenceDrawer, setActiveEvidenceDrawer] = useState<string | null>(null);
   const [regeneratingActivityId, setRegeneratingActivityId] = useState<string | null>(null);
+  const [chatActivity, setChatActivity] = useState<PlannedActivity | null>(null);
 
   useEffect(() => {
     async function loadFullPlanner() {
@@ -229,7 +232,10 @@ export default function FullPlannerPage() {
             </h2>
           </div>
           <p style={{ fontSize: "0.9375rem", color: "var(--color-stone-700)", lineHeight: 1.6, marginBottom: "1rem" }}>
-            {isWeekly ? (planner as WeeklyPlanner).prepWeekIn10Minutes : (planner as MonthlyPlanner).prepThisMonth}
+            {(isWeekly ? (planner as WeeklyPlanner).prepWeekIn10Minutes : (planner as MonthlyPlanner).prepThisMonth)
+              .replace(/pencils_crayons/g, "pencils & crayons")
+              .replace(/child_safe_scissors/g, "child-safe scissors")
+              .replace(/_/g, " ")}
           </p>
           <div style={{ display: "flex", gap: "0.375rem", flexWrap: "wrap" }}>
             {(isWeekly ? (planner as WeeklyPlanner).materialsOverview : (planner as MonthlyPlanner).globalMaterialsPool).map((m) => (
@@ -245,7 +251,7 @@ export default function FullPlannerPage() {
                   color: "var(--color-stone-700)",
                 }}
               >
-                {m}
+                {formatMaterial(m)}
               </span>
             ))}
           </div>
@@ -271,11 +277,21 @@ export default function FullPlannerPage() {
                       DAY {day.dayNumber}
                     </span>
                     <h3 style={{ fontFamily: "'Outfit', sans-serif", fontSize: "1.375rem", marginTop: "0.25rem" }}>
-                      {act.title}
+                      {act.title.replace(/_/g, " ")}
                     </h3>
                   </div>
 
-                  <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
+                  <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
+                    <button
+                      type="button"
+                      onClick={() => setChatActivity(act)}
+                      className="btn btn-secondary btn-sm"
+                      style={{ fontSize: "0.8125rem" }}
+                      id={`btn-chat-day-${day.dayNumber}`}
+                      title="Ask questions, get low-mess adaptations, or advice for reluctant children"
+                    >
+                      💬 Ask Sprout Coach
+                    </button>
                     <button
                       type="button"
                       disabled={isRegenerating}
@@ -291,8 +307,28 @@ export default function FullPlannerPage() {
                 </div>
 
                 <p style={{ color: "var(--color-stone-700)", lineHeight: 1.6, fontSize: "0.9375rem", marginBottom: "1.25rem" }}>
-                  {act.description}
+                  {act.description.replace(/_/g, " ")}
                 </p>
+
+                {/* Why Kids Love This Box */}
+                {act.whyEngaging && (
+                  <div
+                    style={{
+                      background: "var(--color-cream)",
+                      borderLeft: "3.5px solid var(--color-sage-600)",
+                      padding: "0.875rem 1rem",
+                      borderRadius: "var(--radius-sm)",
+                      marginBottom: "1.25rem",
+                    }}
+                  >
+                    <p style={{ fontSize: "0.75rem", fontWeight: 700, fontFamily: "'Outfit', sans-serif", color: "var(--color-sage-800)", marginBottom: "0.25rem" }}>
+                      ✨ Why Kids Love This:
+                    </p>
+                    <p style={{ fontSize: "0.875rem", color: "var(--color-stone-700)", lineHeight: 1.55 }}>
+                      {act.whyEngaging.replace(/_/g, " ")}
+                    </p>
+                  </div>
+                )}
 
                 {/* Evidence Rationale Box */}
                 <div
@@ -305,10 +341,10 @@ export default function FullPlannerPage() {
                   }}
                 >
                   <p style={{ fontSize: "0.75rem", fontWeight: 700, fontFamily: "'Outfit', sans-serif", color: "var(--color-sage-700)", marginBottom: "0.25rem" }}>
-                    Why it's here:
+                    Developmental Focus:
                   </p>
                   <p style={{ fontSize: "0.875rem", color: "var(--color-stone-600)", lineHeight: 1.55 }}>
-                    {act.rationale}
+                    {act.rationale.replace(/_/g, " ")}
                   </p>
                   <button
                     type="button"
@@ -330,9 +366,33 @@ export default function FullPlannerPage() {
                   {activeEvidenceDrawer === act.id && (
                     <div style={{ marginTop: "0.5rem", paddingTop: "0.5rem", borderTop: "1px dashed var(--color-sage-300)", fontSize: "0.75rem", color: "var(--color-stone-600)" }}>
                       <p style={{ fontWeight: 600, color: "var(--color-stone-800)" }}>Scientific Source Citation:</p>
-                      <p>{act.evidence?.[0]?.supportExplanation || "Grounded in CDC & AAP evidence surveillance guidelines."}</p>
+                      <p>{(act.evidence?.[0]?.supportExplanation || "Grounded in CDC & AAP evidence surveillance guidelines.").replace(/_/g, " ")}</p>
                     </div>
                   )}
+                </div>
+
+                {/* Materials list */}
+                <div style={{ marginBottom: "1.25rem" }}>
+                  <p style={{ fontSize: "0.75rem", fontWeight: 700, fontFamily: "'Outfit', sans-serif", color: "var(--color-stone-500)", marginBottom: "0.35rem" }}>
+                    MATERIALS:
+                  </p>
+                  <div style={{ display: "flex", gap: "0.35rem", flexWrap: "wrap" }}>
+                    {act.materials.map((mat) => (
+                      <span
+                        key={mat}
+                        style={{
+                          background: "white",
+                          border: "1px solid var(--color-stone-200)",
+                          borderRadius: "var(--radius-full)",
+                          padding: "0.2rem 0.6rem",
+                          fontSize: "0.75rem",
+                          color: "var(--color-stone-700)",
+                        }}
+                      >
+                        {formatMaterial(mat)}
+                      </span>
+                    ))}
+                  </div>
                 </div>
 
                 {/* Metrics */}
@@ -347,8 +407,8 @@ export default function FullPlannerPage() {
                   </div>
                   <div style={{ background: "var(--color-cream)", borderRadius: "var(--radius-sm)", padding: "0.5rem", textAlign: "center" }}>
                     <p style={{ fontSize: "0.6875rem", color: "var(--color-stone-400)" }}>Supervision</p>
-                    <p style={{ fontWeight: 700, fontSize: "0.875rem", fontFamily: "'Outfit', sans-serif", textTransform: "capitalize" }}>
-                      {act.supervisionLevel.replace(/_/g, " ")}
+                    <p style={{ fontWeight: 700, fontSize: "0.875rem", fontFamily: "'Outfit', sans-serif" }}>
+                      {formatSupervision(act.supervisionLevel)}
                     </p>
                   </div>
                 </div>
@@ -360,7 +420,7 @@ export default function FullPlannerPage() {
                   </p>
                   <ol style={{ paddingLeft: "1.25rem", color: "var(--color-stone-700)", lineHeight: 1.55, fontSize: "0.875rem" }}>
                     {act.instructions.map((step, idx) => (
-                      <li key={idx} style={{ marginBottom: "0.25rem" }}>{step}</li>
+                      <li key={idx} style={{ marginBottom: "0.25rem" }}>{step.replace(/_/g, " ")}</li>
                     ))}
                   </ol>
                 </div>
@@ -370,13 +430,13 @@ export default function FullPlannerPage() {
                   {act.easyVariation && (
                     <div style={{ background: "white", border: "1px solid var(--color-stone-200)", borderRadius: "var(--radius-sm)", padding: "0.75rem" }}>
                       <p style={{ fontWeight: 700, color: "var(--color-stone-700)" }}>Easy Variation:</p>
-                      <p style={{ color: "var(--color-stone-500)" }}>{act.easyVariation}</p>
+                      <p style={{ color: "var(--color-stone-500)" }}>{act.easyVariation.replace(/_/g, " ")}</p>
                     </div>
                   )}
                   {act.extension && (
                     <div style={{ background: "white", border: "1px solid var(--color-stone-200)", borderRadius: "var(--radius-sm)", padding: "0.75rem" }}>
                       <p style={{ fontWeight: 700, color: "var(--color-stone-700)" }}>Extension:</p>
-                      <p style={{ color: "var(--color-stone-500)" }}>{act.extension}</p>
+                      <p style={{ color: "var(--color-stone-500)" }}>{act.extension.replace(/_/g, " ")}</p>
                     </div>
                   )}
                 </div>
@@ -387,6 +447,16 @@ export default function FullPlannerPage() {
 
         {/* Community Beta / Demo Feedback Widget */}
         <FeedbackWidget generationId={generationId} />
+
+        {/* Activity Chat Drawer */}
+        {chatActivity && (
+          <ActivityChatDrawer
+            activity={chatActivity}
+            childAge={planner.preferences.child.ageBand}
+            isOpen={!!chatActivity}
+            onClose={() => setChatActivity(null)}
+          />
+        )}
       </main>
     </div>
   );
