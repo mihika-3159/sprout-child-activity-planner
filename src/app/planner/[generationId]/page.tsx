@@ -26,7 +26,13 @@ export default function FullPlannerPage() {
   useEffect(() => {
     async function loadFullPlanner() {
       try {
-        const res = await fetch(`/api/planner/${generationId}`);
+        const tokenFromStorage = typeof window !== "undefined" ? sessionStorage.getItem(`sprout_token_${generationId}`) : null;
+        const searchToken = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("token") : null;
+        const effectiveToken = searchToken || tokenFromStorage;
+
+        const res = await fetch(`/api/planner/${generationId}${effectiveToken ? `?token=${encodeURIComponent(effectiveToken)}` : ""}`, {
+          headers: effectiveToken ? { "X-Generation-Token": effectiveToken } : {},
+        });
         const data = await res.json();
 
         if (!res.ok) {
@@ -35,7 +41,7 @@ export default function FullPlannerPage() {
 
         if (!data.isUnlocked) {
           // If not unlocked, redirect back to preview
-          router.replace(`/preview/${generationId}`);
+          router.replace(`/preview/${generationId}${effectiveToken ? `?token=${encodeURIComponent(effectiveToken)}` : ""}`);
           return;
         }
 

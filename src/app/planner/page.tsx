@@ -183,13 +183,20 @@ export default function PlannerChatPage() {
 
         setMonthlyProgress("Finalising your monthly plan…");
         clearTimeout(timeoutId);
-        router.push(`/planner/${generationId}`);
+        if (generationToken) {
+          try { sessionStorage.setItem(`sprout_token_${generationId}`, generationToken); } catch {}
+        }
+        router.push(`/planner/${generationId}${generationToken ? `?token=${encodeURIComponent(generationToken)}` : ""}`);
         return;
       }
 
       // Weekly: direct redirect
       clearTimeout(timeoutId);
-      router.push(`/planner/${data.generationId}`);
+      const weeklyToken: string | undefined = data.generationToken;
+      if (weeklyToken) {
+        try { sessionStorage.setItem(`sprout_token_${data.generationId}`, weeklyToken); } catch {}
+      }
+      router.push(`/planner/${data.generationId}${weeklyToken ? `?token=${encodeURIComponent(weeklyToken)}` : ""}`);
     } catch (err: unknown) {
       clearTimeout(timeoutId);
       const isAbort = err instanceof Error && err.name === "AbortError";

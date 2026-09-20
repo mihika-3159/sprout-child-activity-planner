@@ -16,8 +16,18 @@ export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ generationId: string }> }
 ) {
+  // Safely obtain session — if SESSION_SECRET is missing in env this throws, so we catch it
+  let sessionId = "";
+  let token = "";
   try {
-    const { sessionId, token } = await getOrCreateSession();
+    const sess = await getOrCreateSession();
+    sessionId = sess.sessionId;
+    token = sess.token;
+  } catch {
+    // Session secret not configured — fall through to token-based auth only
+  }
+
+  try {
     const { generationId } = await params;
 
     const body = await request.json();
@@ -41,12 +51,17 @@ export async function POST(
       return NextResponse.json({ error: "Generation not found" }, { status: 404 });
     }
 
-    // Security: owner via session cookie OR bearer of valid generationToken HMAC
-    const genTokenHeader = request.headers.get("x-generation-token");
-    const isTokenValid = Boolean(genTokenHeader && verifyGenerationToken(generationId, genTokenHeader));
-    const isOwner = generation.session_id === sessionId;
+    // Auth: demo mode bypasses all auth (consistent with GET /planner/[generationId])
+    const isDemoMode = process.env.DEMO_MODE !== "false" || !process.env.STRIPE_SECRET_KEY;
 
-    if (!isOwner && !isTokenValid) {
+    // Accept token from header OR query param (consistent with GET route)
+    const genTokenHeader = request.headers.get("x-generation-token");
+    const genTokenQuery = request.nextUrl.searchParams.get("token");
+    const passedToken = genTokenHeader || genTokenQuery;
+    const isTokenValid = Boolean(passedToken && verifyGenerationToken(generationId, passedToken));
+    const isOwner = sessionId && generation.session_id === sessionId;
+
+    if (!isDemoMode && !isOwner && !isTokenValid) {
       return NextResponse.json(
         { error: "Unauthorised" },
         { status: 401 }

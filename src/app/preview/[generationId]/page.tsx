@@ -21,7 +21,13 @@ export default function PreviewPage() {
   useEffect(() => {
     async function loadPreview() {
       try {
-        const res = await fetch(`/api/planner/${generationId}`);
+        const tokenFromStorage = typeof window !== "undefined" ? sessionStorage.getItem(`sprout_token_${generationId}`) : null;
+        const searchToken = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("token") : null;
+        const effectiveToken = searchToken || tokenFromStorage;
+
+        const res = await fetch(`/api/planner/${generationId}${effectiveToken ? `?token=${encodeURIComponent(effectiveToken)}` : ""}`, {
+          headers: effectiveToken ? { "X-Generation-Token": effectiveToken } : {},
+        });
         const data = await res.json();
         if (!res.ok) {
           throw new Error(data.error || "Failed to load preview");
@@ -29,7 +35,7 @@ export default function PreviewPage() {
 
         if (data.isUnlocked) {
           // If already unlocked, redirect directly to full planner
-          router.replace(`/planner/${generationId}`);
+          router.replace(`/planner/${generationId}${effectiveToken ? `?token=${encodeURIComponent(effectiveToken)}` : ""}`);
           return;
         }
 

@@ -51,12 +51,18 @@ class SproutDatabase {
     this.loadFromDisk();
   }
 
+  private lastMtime: number = 0;
+
   private loadFromDisk() {
     try {
       if (fs.existsSync(this.filePath)) {
-        const data = fs.readFileSync(this.filePath, "utf-8");
-        const parsed = JSON.parse(data);
-        this.store = { ...this.store, ...parsed };
+        const stats = fs.statSync(this.filePath);
+        if (stats.mtimeMs > this.lastMtime) {
+          const data = fs.readFileSync(this.filePath, "utf-8");
+          const parsed = JSON.parse(data);
+          this.store = { ...this.store, ...parsed };
+          this.lastMtime = stats.mtimeMs;
+        }
       } else {
         // If writable location does not exist yet (e.g., in /tmp on serverless), seed from bundled ./data/app_store.json
         const seedPath = path.resolve(process.cwd(), "./data/app_store.json");
@@ -79,6 +85,9 @@ class SproutDatabase {
         fs.mkdirSync(dir, { recursive: true });
       }
       fs.writeFileSync(this.filePath, JSON.stringify(this.store, null, 2), "utf-8");
+      if (fs.existsSync(this.filePath)) {
+        this.lastMtime = fs.statSync(this.filePath).mtimeMs;
+      }
     } catch {
       // Ignore disk write errors in ephemeral environments
     }
@@ -98,17 +107,20 @@ class SproutDatabase {
 
     return {
       run(...params: unknown[]) {
+        self.loadFromDisk();
         self.executeStatement(trimmed, params);
         self.saveToDisk();
         return { changes: 1, lastInsertRowid: Date.now() };
       },
 
       get(...params: unknown[]): Record<string, unknown> | undefined {
+        self.loadFromDisk();
         const results = self.queryStatement(trimmed, params);
         return results[0];
       },
 
       all(...params: unknown[]): Array<Record<string, unknown>> {
+        self.loadFromDisk();
         return self.queryStatement(trimmed, params);
       },
     };
@@ -265,6 +277,13 @@ class SproutDatabase {
           this.store.planner_generations[id] = { id };
         }
         this.store.planner_generations[id].full_data = full;
+      } else if (lower.includes("set status = ?")) {
+        // Generic status update (e.g. generating_week_N)
+        const status = params[0] as string;
+        const id = params[1] as string;
+        if (this.store.planner_generations[id]) {
+          this.store.planner_generations[id].status = status;
+        }
       }
       return;
     }
@@ -272,12 +291,24 @@ class SproutDatabase {
     // ─── INSERT INTO planner_activities ─────────────────────────
     if (lower.includes("insert into planner_activities") || lower.includes("insert or replace into planner_activities")) {
       const id = String(params[0]);
+      // Monthly: (id, generation_id, week_number, day_number, activity_index, activity_data, novelty_signature) = 7 params
+      // Weekly:  (id, generation_id, day_number, activity_index, activity_data, novelty_signature) = 6 params
+      const isMonthly = params.length >= 7;
+      const generationId = String(params[1]);
+      const weekNumber = isMonthly ? Number(params[2]) : null;
+      const dayNumber = isMonthly ? Number(params[3]) : Number(params[2]);
+      const activityIndex = isMonthly ? Number(params[4]) : Number(params[3]);
+      const activityData = isMonthly ? (params[5] as string) : (params[4] as string);
+      const noveltySignature = isMonthly ? (params[6] as string) : (params[5] as string);
+
       this.store.planner_activities[id] = {
         id,
-        generation_id: params[1],
-        day_number: params[2] || params[3],
-        activity_data: params[4] || params[5],
-        novelty_signature: params[5] || params[6],
+        generation_id: generationId,
+        week_number: weekNumber,
+        day_number: dayNumber,
+        activity_index: activityIndex,
+        activity_data: activityData,
+        novelty_signature: noveltySignature,
         created_at: new Date().toISOString(),
       };
       return;
@@ -479,6 +510,33 @@ class SproutDatabase {
         return gen ? [gen] : [];
       }
       return allGens;
+    }
+
+    // ─── SELECT FROM planner_activities ──────────────────────────
+    if (lower.includes("from planner_activities")) {
+      const genId = params[0] as string;
+      const allActs = Object.values(this.store.planner_activities).filter(
+        (a) => a.generation_id === genId
+      );
+      // DISTINCT week_number query
+      if (lower.includes("distinct week_number")) {
+        const weekNums = [...new Set(allActs.map((a) => a.week_number))].filter((w) => w !== null && w !== undefined);
+        return weekNums.map((w) => ({ week_number: w }));
+      }
+      // Filter by week_number
+      if (params.length >= 2 && !lower.includes("distinct")) {
+        const weekNum = Number(params[1]);
+        const weekActs = allActs
+          .filter((a) => Number(a.week_number) === weekNum)
+          .sort((a, b) => Number(a.day_number) - Number(b.day_number));
+        return weekActs;
+      }
+      // All activities for generation, ordered by week then day
+      return allActs.sort((a, b) => {
+        const wDiff = Number(a.week_number || 0) - Number(b.week_number || 0);
+        if (wDiff !== 0) return wDiff;
+        return Number(a.day_number) - Number(b.day_number);
+      });
     }
 
     // ─── SELECT FROM purchase_entitlements ───────────────────────
