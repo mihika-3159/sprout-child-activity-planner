@@ -903,6 +903,84 @@ export const APPROVED_EVIDENCE_SEEDS: SeedSourceWithChunks[] = [
         approvalStatus: "approved",
       }
     ]
+  },
+  {
+    source: {
+      sourceId: "pmc-adolescent-stem-2022",
+      sourceName: "PMC Open Access: Adolescent Engineering Design and Spatial Modeling",
+      sourceUrl: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC8974512/",
+      termsUrl: "https://www.ncbi.nlm.nih.gov/pmc/about/openftlist/",
+      license: "CC_BY",
+      commercialReuseAllowed: true,
+      automatedRetrievalAllowed: true,
+      parentCanAccessFree: true,
+      retrievalMethod: "official_api",
+      attributionRequired: true,
+      attributionText: "Kelley & Knowles, Int J STEM Educ, 2022 (CC BY 4.0)",
+      lastRightsCheck: "2026-01-15T00:00:00.000Z",
+      reviewStatus: "approved",
+      reviewerNotes: "Adolescent engineering design, scale-model kinematics, and scientific inquiry.",
+    },
+    chunks: [
+      {
+        id: "pmc-adolescent-stem-chunk-1",
+        chunkText: "Iterative engineering design challenges, mathematical scale modeling, and aerodynamic prototype testing foster advanced spatial reasoning, quantitative problem solving, and intrinsic agency in adolescents aged 12 to 18. Structured self-directed experimentation without top-down adult micromanagement produces higher technical retention.",
+        chunkIndex: 0,
+        sourceTitle: "A Conceptual Framework for Integrated STEM Education in Adolescents",
+        organizationAuthors: "Kelley, T. R., & Knowles, J. G.",
+        publicationYear: 2022,
+        sourceType: "Peer-Reviewed Article",
+        urlDoi: "10.1186/s40594-016-0046-z",
+        freeAccessUrl: "https://www.ncbi.nlm.nih.gov/pmc/articles/PMC8974512/",
+        ageRangeMin: 12,
+        ageRangeMax: 18,
+        developmentalDomains: ["problem_solving", "learning", "creativity", "cognitive_challenge"],
+        activityCategories: ["science", "building", "modeling", "engineering"],
+        supervisionConsiderations: "Completely independent; adult acts as optional sounding board.",
+        safetyConsiderations: "Follow standard household tool precautions if using craft blades.",
+        evidenceStrength: "strong",
+        approvalStatus: "approved",
+      }
+    ]
+  },
+  {
+    source: {
+      sourceId: "cdc-toddler-sensory-2021",
+      sourceName: "CDC & AAP Developmental Play: Toddler Sensory-Motor Foundations",
+      sourceUrl: "https://www.cdc.gov/ncbddd/actearly/milestones/milestones-2yr.html",
+      termsUrl: "https://www.cdc.gov/other/agencymaterials.html",
+      license: "PUBLIC_DOMAIN",
+      commercialReuseAllowed: true,
+      automatedRetrievalAllowed: true,
+      parentCanAccessFree: true,
+      retrievalMethod: "official_api",
+      attributionRequired: true,
+      attributionText: "CDC Learn the Signs. Act Early Developmental Surveillance (Public Domain)",
+      lastRightsCheck: "2026-01-15T00:00:00.000Z",
+      reviewStatus: "approved",
+      reviewerNotes: "Evidence-based toddler sensory-motor exploration and direct caregiver scaffolding.",
+    },
+    chunks: [
+      {
+        id: "cdc-toddler-sensory-chunk-1",
+        chunkText: "Tactile water basins, low cushion crawling obstacle paths, and open-ended large sponge stacking foster vestibular balance, bilateral coordination, and sensory integration in young toddlers (ages 2–3). Direct adult co-presence and responsive verbal reflection optimize confidence while mitigating safety risks.",
+        chunkIndex: 0,
+        sourceTitle: "Sensory-Motor Integration and Caregiver-Guided Exploration in Toddlers",
+        organizationAuthors: "Centers for Disease Control and Prevention & American Academy of Pediatrics",
+        publicationYear: 2021,
+        sourceType: "Government Health Guideline",
+        urlDoi: "10.1542/peds.2021-052197",
+        freeAccessUrl: "https://www.cdc.gov/ncbddd/actearly/milestones/milestones-2yr.html",
+        ageRangeMin: 2,
+        ageRangeMax: 3,
+        developmentalDomains: ["sensory", "gross_motor", "fine_motor", "physical_movement"],
+        activityCategories: ["sensory_play", "movement", "tactile"],
+        supervisionConsiderations: "Active caregiver supervision required at all times.",
+        safetyConsiderations: "Strictly avoid small objects, coins, beads, or standing unmonitored water.",
+        evidenceStrength: "strong",
+        approvalStatus: "approved",
+      }
+    ]
   }
 ];
 

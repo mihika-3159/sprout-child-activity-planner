@@ -104,8 +104,23 @@ export async function retrieveApprovedEvidence(
     license: string;
   }>;
 
-  if (rows.length === 0) {
-    return [];
+  let candidateRows = rows;
+
+  // Perform strict in-memory age filtering
+  if (query.ageMin !== undefined && query.ageMax !== undefined) {
+    const min = query.ageMin;
+    const max = query.ageMax;
+    candidateRows = candidateRows.filter((r) => {
+      // Chunk must overlap with requested age range
+      const cMin = r.ageMin ?? 0;
+      const cMax = r.ageMax ?? 18;
+      return cMin <= max && cMax >= min;
+    });
+  }
+
+  // If candidate rows after age filtering is empty, fallback to candidate rows (or broader set)
+  if (candidateRows.length === 0) {
+    candidateRows = rows;
   }
 
   // 2. Generate embedding for query
@@ -114,7 +129,7 @@ export async function retrieveApprovedEvidence(
   // 3. Compute vector similarity scores
   const scoredChunks: RetrievedChunk[] = [];
 
-  for (const row of rows) {
+  for (const row of candidateRows) {
     let rowEmbedding: number[] = [];
 
     if (row.embeddingBlob && row.embeddingBlob.length > 0) {
