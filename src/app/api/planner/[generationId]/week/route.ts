@@ -1,0 +1,221 @@
+import { NextRequest, NextResponse } from "next/server";
+import { getOrCreateSession } from "@/lib/session/anonymous";
+import { getDb } from "@/lib/db/schema";
+import { PlannerPreferences, PlannedActivity, MonthlyPlanner } from "@/lib/schemas/preferences";
+import { generateSingleActivity } from "@/lib/generation/pipeline";
+
+const WEEKLY_THEMES = [
+  "Exploration & Discovery",
+  "Story & Imagination",
+  "Building & Engineering",
+  "Nature & Observation",
+];
+
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ generationId: string }> }
+) {
+  try {
+    const { sessionId } = await getOrCreateSession();
+    const { generationId } = await params;
+
+    const body = await request.json();
+    const { weekNumber } = body as { weekNumber: number };
+
+    if (!weekNumber || weekNumber < 1 || weekNumber > 4) {
+      return NextResponse.json({ error: "weekNumber must be 1–4" }, { status: 400 });
+    }
+
+    const db = getDb();
+    const generation = db
+      .prepare("SELECT preferences, full_data, product_type, session_id FROM planner_generations WHERE id = ?")
+      .get(generationId) as {
+        preferences: string;
+        full_data: string | null;
+        product_type: string;
+        session_id: string;
+      } | undefined;
+
+    if (!generation) {
+      return NextResponse.json({ error: "Generation not found" }, { status: 404 });
+    }
+
+    // Security: only owner can request chunk generation
+    if (generation.session_id !== sessionId) {
+      return NextResponse.json({ error: "Unauthorised" }, { status: 403 });
+    }
+
+    if (generation.product_type !== "monthly") {
+      return NextResponse.json({ error: "This endpoint is for monthly plans only" }, { status: 400 });
+    }
+
+    const preferences: PlannerPreferences = JSON.parse(generation.preferences);
+    const theme = WEEKLY_THEMES[weekNumber - 1];
+
+    // Generate all 7 days for this week concurrently
+    const dayIndices = [1, 2, 3, 4, 5, 6, 7];
+    const weekActivities = await Promise.all(
+      dayIndices.map((dayNum) =>
+        generateSingleActivity({
+          sessionId,
+          preferences,
+          dayNumber: (weekNumber - 1) * 7 + dayNum,
+          targetDomain: theme,
+        })
+      )
+    );
+
+    // Persist each activity in planner_activities
+    for (let i = 0; i < weekActivities.length; i++) {
+      const act = weekActivities[i];
+      const dayNum = i + 1;
+      db.prepare(`
+        INSERT OR REPLACE INTO planner_activities (
+          id, generation_id, week_number, day_number, activity_index, activity_data, novelty_signature
+        ) VALUES (?, ?, ?, ?, ?, ?, ?)
+      `).run(
+        act.id,
+        generationId,
+        weekNumber,
+        dayNum,
+        0,
+        JSON.stringify(act),
+        act.noveltySignature
+      );
+    }
+
+    // Build the week data structure
+    const weekDays: Array<{ dayNumber: number; activities: PlannedActivity[] }> =
+      weekActivities.map((act, i) => ({ dayNumber: i + 1, activities: [act] }));
+
+    const weekData = { weekNumber, theme, days: weekDays };
+
+    // Merge into full_data if it exists, or update status
+    const allWeekRows = db
+      .prepare(
+        `SELECT DISTINCT week_number FROM planner_activities WHERE generation_id = ? ORDER BY week_number`
+      )
+      .all(generationId) as { week_number: number }[];
+
+    const completedWeeks = new Set(allWeekRows.map((r) => r.week_number));
+    completedWeeks.add(weekNumber);
+
+    // If all 4 weeks are done, assemble the full monthly planner and store it
+    if (completedWeeks.size === 4) {
+      const allActivities = db
+        .prepare(
+          `SELECT week_number, day_number, activity_data
+           FROM planner_activities
+           WHERE generation_id = ?
+           ORDER BY week_number, day_number`
+        )
+        .all(generationId) as { week_number: number; day_number: number; activity_data: string }[];
+
+      const globalMaterials = new Set<string>();
+      const weekMap: Record<number, MonthlyPlanner["weeks"][0]> = {};
+
+      for (const row of allActivities) {
+        const act: PlannedActivity = JSON.parse(row.activity_data);
+        act.materials.forEach((m) => globalMaterials.add(m));
+        if (!weekMap[row.week_number]) {
+          weekMap[row.week_number] = {
+            weekNumber: row.week_number,
+            theme: WEEKLY_THEMES[row.week_number - 1],
+            days: [],
+          };
+        }
+        weekMap[row.week_number].days.push({ dayNumber: row.day_number, activities: [act] });
+      }
+
+      const weeks = [1, 2, 3, 4].map((wn) => weekMap[wn]);
+      const materialsList = Array.from(globalMaterials);
+      const targetAge = preferences.ageBand || preferences.child?.ageBand || "4-5";
+
+      const fullMonthlyPlanner: MonthlyPlanner = {
+        id: generationId,
+        sessionId,
+        preferences,
+        generatedAt: new Date().toISOString(),
+        monthlyOverview: {
+          activityMix:
+            "Balanced distribution of fine-motor, creative storytelling, cognitive problem solving, and physical movement.",
+          materialsToKeepNearby: materialsList.slice(0, 8),
+          estimatedParentPrepPerWeek: "~10 minutes of initial setup on Sundays.",
+          optionalWeeklyThemes: WEEKLY_THEMES,
+          numberOfLowSupervisionActivities: 20,
+        },
+        prepThisMonth: `Consolidate everyday materials into an activity basket: ${materialsList.slice(0, 8).join(", ")}. Reusable across all 4 weeks without purchasing new craft kits.`,
+        weeks,
+        globalMaterialsPool: materialsList,
+      };
+
+      const day1 = weeks[0].days[0].activities[0];
+      const day2 = weeks[0].days[1].activities[0];
+
+      const preview = {
+        generationId,
+        productType: "monthly",
+        targetAgeBand: targetAge,
+        preferencesSummary: {
+          ageBand: targetAge,
+          interests: [...(preferences.interests || []), ...(preferences.customInterests || [])],
+          goals: preferences.goals || [],
+          environment: preferences.environment || "indoors",
+          duration: preferences.duration || "20-30",
+          parentInvolvement:
+            preferences.involvement || preferences.parentInvolvement || "setup_then_independent",
+          materials: preferences.selectedMaterials || preferences.materials || [],
+        },
+        day1Activity: day1,
+        day2Teaser: {
+          title: day2.title,
+          descriptionSnippet: day2.description.slice(0, 60) + "...",
+          developmentalDomains: day2.developmentalDomains,
+          estimatedMinutes: day2.activityMinutes.max,
+          setupMinutes: day2.setupMinutes,
+          supervisionLevel: day2.supervisionLevel,
+        },
+        totalActivitiesCount: 28,
+        materialsOverview: materialsList,
+        prepWeekSummary: fullMonthlyPlanner.prepThisMonth,
+        evidenceSummary: `4-week evidence curriculum grounded in peer-reviewed child development research.`,
+        isUnlocked: false,
+      };
+
+      db.prepare(`
+        UPDATE planner_generations
+        SET status = 'preview_ready',
+            preview_data = ?,
+            full_data = ?,
+            updated_at = datetime('now')
+        WHERE id = ?
+      `).run(JSON.stringify(preview), JSON.stringify(fullMonthlyPlanner), generationId);
+
+      return NextResponse.json({
+        success: true,
+        week: weekData,
+        isComplete: true,
+        generationId,
+        preview,
+      });
+    }
+
+    // Not yet complete — update status
+    db.prepare(
+      "UPDATE planner_generations SET status = ?, updated_at = datetime('now') WHERE id = ?"
+    ).run(`generating_week_${weekNumber}`, generationId);
+
+    return NextResponse.json({
+      success: true,
+      week: weekData,
+      isComplete: false,
+      completedWeeks: Array.from(completedWeeks),
+    });
+  } catch (err: unknown) {
+    console.error("[Week Chunk Error]:", err);
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : "Failed to generate week" },
+      { status: 500 }
+    );
+  }
+}

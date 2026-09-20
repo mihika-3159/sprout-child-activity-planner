@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getOrCreateSession } from "@/lib/session/anonymous";
 import { PlannerPreferencesSchema } from "@/lib/schemas/preferences";
-import { composeWeeklyPlanner, composeMonthlyPlanner } from "@/lib/generation/composer";
+import { composeWeeklyPlanner } from "@/lib/generation/composer";
 import { rateLimitMiddleware } from "@/lib/rateLimit/rateLimiter";
 import { getDb } from "@/lib/db/schema";
 
@@ -47,20 +47,38 @@ export async function POST(request: NextRequest) {
       VALUES ('preferences_completed', ?)
     `).run(preferences.productType);
 
-    // 5. Compose the plan and get safe server-gated preview
-    let previewResult;
+    // 5a. Monthly: seed the generation record and return the ID immediately.
+    //     The client calls /api/planner/[generationId]/week for each of the 4 weeks
+    //     sequentially, each completing well within serverless timeout limits.
     if (preferences.productType === "monthly") {
-      previewResult = await composeMonthlyPlanner({ sessionId, preferences });
-    } else {
-      previewResult = await composeWeeklyPlanner({ sessionId, preferences });
+      const { v4: uuidv4 } = await import("uuid");
+      const generationId = uuidv4();
+      db.prepare(`
+        INSERT INTO planner_generations (
+          id, session_id, product_type, status, preferences
+        ) VALUES (?, ?, 'monthly', 'pending_chunks', ?)
+      `).run(generationId, sessionId, JSON.stringify(preferences));
+
+      db.prepare(
+        "INSERT INTO analytics_events (event_type, product_type) VALUES ('monthly_chunked_init', 'monthly')"
+      ).run();
+
+      return NextResponse.json({
+        success: true,
+        generationId,
+        chunked: true,
+        totalWeeks: 4,
+      });
     }
+
+    // 5b. Weekly: synchronous single-request compose (7 activities — fast enough)
+    const previewResult = await composeWeeklyPlanner({ sessionId, preferences });
 
     db.prepare(`
       INSERT INTO analytics_events (event_type, product_type)
       VALUES ('preview_generated', ?)
     `).run(preferences.productType);
 
-    // Return the safe preview payload
     return NextResponse.json({
       success: true,
       generationId: previewResult.preview.generationId,
