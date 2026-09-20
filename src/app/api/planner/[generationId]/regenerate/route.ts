@@ -21,10 +21,12 @@ export async function POST(
     }
 
     const body = await request.json();
-    const { dayNumber, weekNumber = 1, activityIndex = 0 } = body as {
+    const { dayNumber, weekNumber = 1, activityIndex = 0, currentTitle, currentMechanic } = body as {
       dayNumber: number;
       weekNumber?: number;
       activityIndex?: number;
+      currentTitle?: string;
+      currentMechanic?: string;
     };
 
     if (!dayNumber) {
@@ -53,11 +55,14 @@ export async function POST(
     const preferences: PlannerPreferences = JSON.parse(generation.preferences);
 
     // Generate new activity preserving all original constraints
+    // Exclude the current title and mechanic so the regenerated activity is genuinely different
     const newActivity = await generateSingleActivity({
       sessionId,
       preferences,
       dayNumber,
       activityIndex,
+      excludeTitle: currentTitle,
+      excludeMechanic: currentMechanic,
     });
 
     // Update in database planner_activities
