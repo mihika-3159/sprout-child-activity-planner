@@ -33,6 +33,7 @@ import {
   EnergyLevel,
   PlannerProduct,
   PlannerPreferences,
+  normalizePlannerPreferences,
 } from "@/lib/schemas/preferences";
 import { PRIVACY_NOTICE, redactIdentifyingInformation, getPrivacyReminderMessage } from "@/lib/privacy/redaction";
 
@@ -53,6 +54,9 @@ export default function PlannerChatPage() {
   const [isGenerating, setIsGenerating] = useState<boolean>(false);
   const [privacyWarning, setPrivacyWarning] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [monthlyProgress, setMonthlyProgress] = useState<string | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
+  const generatingRef = useRef<boolean>(false);
 
   // Preference state
   const [ageBand, setAgeBand] = useState<AgeBand>("4-5");
@@ -98,10 +102,19 @@ export default function PlannerChatPage() {
   };
 
   const handleGeneratePlan = async () => {
+    // Prevent duplicate submissions
+    if (generatingRef.current) return;
+    generatingRef.current = true;
     setIsGenerating(true);
     setErrorMessage(null);
+    setMonthlyProgress(null);
 
-    const preferences: PlannerPreferences = {
+    // AbortController for timeout / cancel
+    const abort = new AbortController();
+    abortRef.current = abort;
+    const timeoutId = setTimeout(() => abort.abort(), 120_000); // 2-minute hard client timeout
+
+    const preferences: PlannerPreferences = normalizePlannerPreferences({
       child: {
         ageBand,
         numberOfChildren: 1,
@@ -120,13 +133,14 @@ export default function PlannerChatPage() {
       activitiesPerDay: 1,
       productType,
       playmatesCount,
-    };
+    });
 
     try {
       const res = await fetch("/api/planner/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(preferences),
+        signal: abort.signal,
       });
 
       const data = await res.json();
@@ -135,16 +149,51 @@ export default function PlannerChatPage() {
         throw new Error(data.error || "Failed to generate plan");
       }
 
-      // Redirect directly to the full unlocked activity schedule for family testing
+      // Monthly: chunked week-by-week generation with visible progress
+      if (data.chunked && data.generationId) {
+        const generationId: string = data.generationId;
+        const totalWeeks: number = data.totalWeeks ?? 4;
+
+        for (let week = 1; week <= totalWeeks; week++) {
+          if (abort.signal.aborted) throw new Error("Generation was cancelled.");
+          setMonthlyProgress(`Creating week ${week} of ${totalWeeks}…`);
+
+          const weekRes = await fetch(`/api/planner/${generationId}/week`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ weekNumber: week }),
+            signal: abort.signal,
+          });
+
+          const weekData = await weekRes.json();
+          if (!weekRes.ok) {
+            throw new Error(weekData.error || `Failed generating week ${week}`);
+          }
+        }
+
+        setMonthlyProgress("Finalising your monthly plan…");
+        clearTimeout(timeoutId);
+        router.push(`/planner/${generationId}`);
+        return;
+      }
+
+      // Weekly: direct redirect
+      clearTimeout(timeoutId);
       router.push(`/planner/${data.generationId}`);
     } catch (err: unknown) {
+      clearTimeout(timeoutId);
+      const isAbort = err instanceof Error && err.name === "AbortError";
       console.error(err);
       setErrorMessage(
-        err instanceof Error
+        isAbort
+          ? "Generation timed out. Please try again."
+          : err instanceof Error
           ? err.message
           : "We're temporarily at capacity. Please try again shortly."
       );
+      setMonthlyProgress(null);
       setIsGenerating(false);
+      generatingRef.current = false;
     }
   };
 
@@ -244,59 +293,70 @@ export default function PlannerChatPage() {
           </div>
         )}
 
+        {/* Accessible live status */}
+        <div role="status" aria-live="polite" className="sr-only">
+          Step {step} of 7: {step === 1 ? "Choose child's age" : step === 2 ? "Select interests" : step === 3 ? "Set goals and involvement" : step === 4 ? "Select playmates" : step === 5 ? "Choose environment and duration" : step === 6 ? "Select available materials" : "Review and generate plan"}
+        </div>
+
         {/* Conversational Stream */}
         <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
           {/* Step 1: Age Band */}
           <div className="chat-bubble chat-bubble-assistant">
-            <p style={{ fontWeight: 600, marginBottom: "0.75rem", color: "var(--color-stone-900)" }}>
-              Welcome! Let's build your screen-free activity plan. Which age range is this for?
-            </p>
-            <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
-              {AGE_BANDS.map((band) => (
-                <button
-                  key={band}
-                  type="button"
-                  className={`chip ${ageBand === band ? "selected" : ""}`}
-                  onClick={() => {
-                    setAgeBand(band);
-                    if (step === 1) setStep(2);
-                  }}
-                  id={`chip-age-${band}`}
-                >
-                  Age {band}
-                </button>
-              ))}
-            </div>
+            <fieldset style={{ border: "none", padding: 0, margin: 0 }}>
+              <legend style={{ fontWeight: 600, marginBottom: "0.75rem", color: "var(--color-stone-900)", display: "block" }}>
+                Welcome! Let&apos;s build your screen-free activity plan. Which age range is this for?
+              </legend>
+              <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+                {AGE_BANDS.map((band) => (
+                  <button
+                    key={band}
+                    type="button"
+                    className={`chip ${ageBand === band ? "selected" : ""}`}
+                    aria-pressed={ageBand === band}
+                    onClick={() => {
+                      setAgeBand(band);
+                      if (step === 1) setStep(2);
+                    }}
+                    id={`chip-age-${band}`}
+                  >
+                    Age {band}
+                  </button>
+                ))}
+              </div>
+            </fieldset>
           </div>
 
           {/* Step 2: Interests */}
           {step >= 2 && (
             <div className="chat-bubble chat-bubble-assistant animate-fade-in">
-              <p style={{ fontWeight: 600, marginBottom: "0.75rem", color: "var(--color-stone-900)" }}>
-                What does your child enjoy right now? Select as many as you like:
-              </p>
-              <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginBottom: "1rem" }}>
-                {INTERESTS.map((int) => {
-                  const isSelected = selectedInterests.includes(int);
-                  return (
-                    <button
-                      key={int}
-                      type="button"
-                      className={`chip ${isSelected ? "selected" : ""}`}
-                      onClick={() => {
-                        if (isSelected) {
-                          setSelectedInterests(selectedInterests.filter((i) => i !== int));
-                        } else {
-                          setSelectedInterests([...selectedInterests, int]);
-                        }
-                      }}
-                      id={`chip-interest-${int}`}
-                    >
-                      {INTEREST_LABELS[int]}
-                    </button>
-                  );
-                })}
-              </div>
+              <fieldset style={{ border: "none", padding: 0, margin: 0 }}>
+                <legend style={{ fontWeight: 600, marginBottom: "0.75rem", color: "var(--color-stone-900)", display: "block" }}>
+                  What does your child enjoy right now? Select as many as you like:
+                </legend>
+                <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginBottom: "1rem" }}>
+                  {INTERESTS.map((int) => {
+                    const isSelected = selectedInterests.includes(int);
+                    return (
+                      <button
+                        key={int}
+                        type="button"
+                        className={`chip ${isSelected ? "selected" : ""}`}
+                        aria-pressed={isSelected}
+                        onClick={() => {
+                          if (isSelected) {
+                            setSelectedInterests(selectedInterests.filter((i) => i !== int));
+                          } else {
+                            setSelectedInterests([...selectedInterests, int]);
+                          }
+                        }}
+                        id={`chip-interest-${int}`}
+                      >
+                        {INTEREST_LABELS[int]}
+                      </button>
+                    );
+                  })}
+                </div>
+              </fieldset>
 
               {/* Custom Non-identifying Interest Input */}
               <div style={{ display: "flex", gap: "0.5rem", alignItems: "center" }}>
@@ -309,6 +369,7 @@ export default function PlannerChatPage() {
                   onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), handleAddCustomInterest())}
                   style={{ maxWidth: "340px", fontSize: "0.875rem", padding: "0.5rem 0.875rem" }}
                   id="custom-interest-input"
+                  aria-label="Add custom interest"
                 />
                 <button
                   type="button"
@@ -340,6 +401,7 @@ export default function PlannerChatPage() {
                         type="button"
                         onClick={() => setCustomInterests(customInterests.filter((c) => c !== ci))}
                         style={{ background: "none", border: "none", cursor: "pointer", color: "var(--color-sage-700)" }}
+                        aria-label={`Remove ${ci}`}
                       >
                         ×
                       </button>
@@ -365,49 +427,71 @@ export default function PlannerChatPage() {
           {/* Step 3: Goals & Involvement */}
           {step >= 3 && (
             <div className="chat-bubble chat-bubble-assistant animate-fade-in">
-              <p style={{ fontWeight: 600, marginBottom: "0.5rem", color: "var(--color-stone-900)" }}>
-                What are your main goals for this week?
-              </p>
-              <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginBottom: "1.25rem" }}>
-                {GOALS.map((goal) => {
-                  const isSelected = selectedGoals.includes(goal);
-                  return (
-                    <button
-                      key={goal}
-                      type="button"
-                      className={`chip ${isSelected ? "selected" : ""}`}
-                      onClick={() => {
-                        if (isSelected) {
-                          setSelectedGoals(selectedGoals.filter((g) => g !== goal));
-                        } else {
-                          setSelectedGoals([...selectedGoals, goal]);
-                        }
-                      }}
-                      id={`chip-goal-${goal}`}
-                    >
-                      {GOAL_LABELS[goal]}
-                    </button>
-                  );
-                })}
-              </div>
+              {ageBand === "2-3" && (
+                <div
+                  style={{
+                    background: "var(--color-cream)",
+                    borderLeft: "3.5px solid var(--color-sage-600)",
+                    padding: "0.75rem 1rem",
+                    borderRadius: "var(--radius-sm)",
+                    marginBottom: "1.25rem",
+                    fontSize: "0.8125rem",
+                    color: "var(--color-stone-700)",
+                  }}
+                >
+                  <strong style={{ color: "var(--color-sage-800)" }}>💡 Toddler note:</strong> For ages 2–3, toddlers develop through sensory discovery and close connection. Even with low-prep activities, active adult presence is recommended for safety and shared delight.
+                </div>
+              )}
 
-              <p style={{ fontWeight: 600, marginBottom: "0.5rem", color: "var(--color-stone-900)" }}>
-                How involved do you want to be?
-              </p>
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginBottom: "1rem" }}>
-                {PARENT_INVOLVEMENTS.map((inv) => (
-                  <button
-                    key={inv}
-                    type="button"
-                    className={`chip ${parentInvolvement === inv ? "selected" : ""}`}
-                    onClick={() => setParentInvolvement(inv)}
-                    style={{ textAlign: "left", justifyContent: "flex-start", padding: "0.625rem 1rem" }}
-                    id={`chip-inv-${inv}`}
-                  >
-                    {INVOLVEMENT_LABELS[inv]}
-                  </button>
-                ))}
-              </div>
+              <fieldset style={{ border: "none", padding: 0, margin: "0 0 1.25rem 0" }}>
+                <legend style={{ fontWeight: 600, marginBottom: "0.5rem", color: "var(--color-stone-900)", display: "block" }}>
+                  What are your main goals for this week?
+                </legend>
+                <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+                  {GOALS.map((goal) => {
+                    const isSelected = selectedGoals.includes(goal);
+                    return (
+                      <button
+                        key={goal}
+                        type="button"
+                        className={`chip ${isSelected ? "selected" : ""}`}
+                        aria-pressed={isSelected}
+                        onClick={() => {
+                          if (isSelected) {
+                            setSelectedGoals(selectedGoals.filter((g) => g !== goal));
+                          } else {
+                            setSelectedGoals([...selectedGoals, goal]);
+                          }
+                        }}
+                        id={`chip-goal-${goal}`}
+                      >
+                        {GOAL_LABELS[goal]}
+                      </button>
+                    );
+                  })}
+                </div>
+              </fieldset>
+
+              <fieldset style={{ border: "none", padding: 0, margin: 0 }}>
+                <legend style={{ fontWeight: 600, marginBottom: "0.5rem", color: "var(--color-stone-900)", display: "block" }}>
+                  How involved do you want to be?
+                </legend>
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginBottom: "1rem" }}>
+                  {PARENT_INVOLVEMENTS.map((inv) => (
+                    <button
+                      key={inv}
+                      type="button"
+                      className={`chip ${parentInvolvement === inv ? "selected" : ""}`}
+                      aria-pressed={parentInvolvement === inv}
+                      onClick={() => setParentInvolvement(inv)}
+                      style={{ textAlign: "left", justifyContent: "flex-start", padding: "0.625rem 1rem" }}
+                      id={`chip-inv-${inv}`}
+                    >
+                      {INVOLVEMENT_LABELS[inv]}
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
 
               {step === 3 && (
                 <button
@@ -425,27 +509,30 @@ export default function PlannerChatPage() {
           {/* Step 4: Playmates */}
           {step >= 4 && (
             <div className="chat-bubble chat-bubble-assistant animate-fade-in">
-              <p style={{ fontWeight: 600, marginBottom: "0.75rem", color: "var(--color-stone-900)" }}>
-                Are there other children your child can play with? This helps us plan activities that work for solo or group play.
-              </p>
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginBottom: "1rem" }}>
-                {[
-                  { value: 0, label: "🧒 No — my child will be playing alone" },
-                  { value: 1, label: "👫 Yes — 1 other child to play with" },
-                  { value: 2, label: "👨‍👩‍👧 Yes — 2 or more others available" },
-                ].map((opt) => (
-                  <button
-                    key={opt.value}
-                    type="button"
-                    className={`chip ${playmatesCount === opt.value ? "selected" : ""}`}
-                    onClick={() => setPlaymatesCount(opt.value)}
-                    style={{ textAlign: "left", justifyContent: "flex-start", padding: "0.625rem 1rem" }}
-                    id={`chip-playmates-${opt.value}`}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
+              <fieldset style={{ border: "none", padding: 0, margin: 0 }}>
+                <legend style={{ fontWeight: 600, marginBottom: "0.75rem", color: "var(--color-stone-900)", display: "block" }}>
+                  Are there other children your child can play with? This helps us plan activities that work for solo or group play.
+                </legend>
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginBottom: "1rem" }}>
+                  {[
+                    { value: 0, label: "🧒 No — my child will be playing alone" },
+                    { value: 1, label: "👫 Yes — 1 other child to play with" },
+                    { value: 2, label: "👨‍👩‍👧 Yes — 2 or more others available" },
+                  ].map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      className={`chip ${playmatesCount === opt.value ? "selected" : ""}`}
+                      aria-pressed={playmatesCount === opt.value}
+                      onClick={() => setPlaymatesCount(opt.value)}
+                      style={{ textAlign: "left", justifyContent: "flex-start", padding: "0.625rem 1rem" }}
+                      id={`chip-playmates-${opt.value}`}
+                    >
+                      {opt.label}
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
               {step === 4 && (
                 <button
                   type="button"
@@ -462,39 +549,45 @@ export default function PlannerChatPage() {
           {/* Step 5: Environment & Duration */}
           {step >= 5 && (
             <div className="chat-bubble chat-bubble-assistant animate-fade-in">
-              <p style={{ fontWeight: 600, marginBottom: "0.5rem", color: "var(--color-stone-900)" }}>
-                Where will activities happen?
-              </p>
-              <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginBottom: "1rem" }}>
-                {ENVIRONMENTS.map((env) => (
-                  <button
-                    key={env}
-                    type="button"
-                    className={`chip ${environment === env ? "selected" : ""}`}
-                    onClick={() => setEnvironment(env)}
-                    id={`chip-env-${env}`}
-                  >
-                    {ENVIRONMENT_LABELS[env]}
-                  </button>
-                ))}
-              </div>
+              <fieldset style={{ border: "none", padding: 0, margin: "0 0 1rem 0" }}>
+                <legend style={{ fontWeight: 600, marginBottom: "0.5rem", color: "var(--color-stone-900)", display: "block" }}>
+                  Where will activities happen?
+                </legend>
+                <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+                  {ENVIRONMENTS.map((env) => (
+                    <button
+                      key={env}
+                      type="button"
+                      className={`chip ${environment === env ? "selected" : ""}`}
+                      aria-pressed={environment === env}
+                      onClick={() => setEnvironment(env)}
+                      id={`chip-env-${env}`}
+                    >
+                      {ENVIRONMENT_LABELS[env]}
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
 
-              <p style={{ fontWeight: 600, marginBottom: "0.5rem", color: "var(--color-stone-900)" }}>
-                How long should each activity typically last?
-              </p>
-              <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginBottom: "1rem" }}>
-                {DURATIONS.map((dur) => (
-                  <button
-                    key={dur}
-                    type="button"
-                    className={`chip ${duration === dur ? "selected" : ""}`}
-                    onClick={() => setDuration(dur)}
-                    id={`chip-dur-${dur}`}
-                  >
-                    {DURATION_LABELS[dur]}
-                  </button>
-                ))}
-              </div>
+              <fieldset style={{ border: "none", padding: 0, margin: "0 0 1rem 0" }}>
+                <legend style={{ fontWeight: 600, marginBottom: "0.5rem", color: "var(--color-stone-900)", display: "block" }}>
+                  How long should each activity typically last?
+                </legend>
+                <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+                  {DURATIONS.map((dur) => (
+                    <button
+                      key={dur}
+                      type="button"
+                      className={`chip ${duration === dur ? "selected" : ""}`}
+                      aria-pressed={duration === dur}
+                      onClick={() => setDuration(dur)}
+                      id={`chip-dur-${dur}`}
+                    >
+                      {DURATION_LABELS[dur]}
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
 
               {step === 5 && (
                 <button
@@ -512,31 +605,34 @@ export default function PlannerChatPage() {
           {/* Step 6: Materials */}
           {step >= 6 && (
             <div className="chat-bubble chat-bubble-assistant animate-fade-in">
-              <p style={{ fontWeight: 600, marginBottom: "0.5rem", color: "var(--color-stone-900)" }}>
-                What materials do you have readily available?
-              </p>
-              <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginBottom: "1rem" }}>
-                {MATERIALS.map((mat) => {
-                  const isSelected = selectedMaterials.includes(mat);
-                  return (
-                    <button
-                      key={mat}
-                      type="button"
-                      className={`chip ${isSelected ? "selected" : ""}`}
-                      onClick={() => {
-                        if (isSelected) {
-                          setSelectedMaterials(selectedMaterials.filter((m) => m !== mat));
-                        } else {
-                          setSelectedMaterials([...selectedMaterials, mat]);
-                        }
-                      }}
-                      id={`chip-mat-${mat}`}
-                    >
-                      {MATERIAL_LABELS[mat]}
-                    </button>
-                  );
-                })}
-              </div>
+              <fieldset style={{ border: "none", padding: 0, margin: "0 0 1rem 0" }}>
+                <legend style={{ fontWeight: 600, marginBottom: "0.5rem", color: "var(--color-stone-900)", display: "block" }}>
+                  What materials do you have readily available?
+                </legend>
+                <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
+                  {MATERIALS.map((mat) => {
+                    const isSelected = selectedMaterials.includes(mat);
+                    return (
+                      <button
+                        key={mat}
+                        type="button"
+                        className={`chip ${isSelected ? "selected" : ""}`}
+                        aria-pressed={isSelected}
+                        onClick={() => {
+                          if (isSelected) {
+                            setSelectedMaterials(selectedMaterials.filter((m) => m !== mat));
+                          } else {
+                            setSelectedMaterials([...selectedMaterials, mat]);
+                          }
+                        }}
+                        id={`chip-mat-${mat}`}
+                      >
+                        {MATERIAL_LABELS[mat]}
+                      </button>
+                    );
+                  })}
+                </div>
+              </fieldset>
 
               <label
                 style={{
@@ -578,8 +674,45 @@ export default function PlannerChatPage() {
                 Ready to generate your personalised activity plan!
               </p>
               <p style={{ fontSize: "0.9375rem", color: "var(--color-stone-600)", marginBottom: "1.25rem" }}>
-                We'll retrieve vetted child development research, ground each activity in proven evidence, and assemble your plan.
+                We&apos;ll retrieve vetted child development research, ground each activity in proven evidence, and assemble your plan.
               </p>
+
+              {/* Review Summary Card */}
+              <div
+                style={{
+                  background: "var(--color-cream)",
+                  border: "1px solid var(--color-stone-300)",
+                  borderRadius: "var(--radius-md)",
+                  padding: "1rem 1.25rem",
+                  marginBottom: "1.5rem",
+                }}
+              >
+                <h4 style={{ margin: "0 0 0.75rem", fontFamily: "'Outfit', sans-serif", fontSize: "0.9375rem", fontWeight: 700, color: "var(--color-stone-900)" }}>
+                  📋 Your Plan Summary
+                </h4>
+                <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", fontSize: "0.8125rem" }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span><strong>Age:</strong> Age {ageBand}</span>
+                    <button type="button" onClick={() => setStep(1)} style={{ color: "var(--color-sage-700)", textDecoration: "underline", background: "none", border: "none", cursor: "pointer", fontSize: "0.75rem" }}>Edit</button>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span><strong>Interests:</strong> {[...selectedInterests.map((i) => INTEREST_LABELS[i]), ...customInterests].join(", ") || "General play"}</span>
+                    <button type="button" onClick={() => setStep(2)} style={{ color: "var(--color-sage-700)", textDecoration: "underline", background: "none", border: "none", cursor: "pointer", fontSize: "0.75rem" }}>Edit</button>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span><strong>Goals &amp; Involvement:</strong> {selectedGoals.map((g) => GOAL_LABELS[g]).join(", ")} • {INVOLVEMENT_LABELS[parentInvolvement]}</span>
+                    <button type="button" onClick={() => setStep(3)} style={{ color: "var(--color-sage-700)", textDecoration: "underline", background: "none", border: "none", cursor: "pointer", fontSize: "0.75rem" }}>Edit</button>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span><strong>Environment &amp; Time:</strong> {ENVIRONMENT_LABELS[environment]} • {DURATION_LABELS[duration]}</span>
+                    <button type="button" onClick={() => setStep(5)} style={{ color: "var(--color-sage-700)", textDecoration: "underline", background: "none", border: "none", cursor: "pointer", fontSize: "0.75rem" }}>Edit</button>
+                  </div>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span><strong>Materials:</strong> {selectedMaterials.map((m) => MATERIAL_LABELS[m]).join(", ")}{householdOnly ? " (household only)" : ""}</span>
+                    <button type="button" onClick={() => setStep(6)} style={{ color: "var(--color-sage-700)", textDecoration: "underline", background: "none", border: "none", cursor: "pointer", fontSize: "0.75rem" }}>Edit</button>
+                  </div>
+                </div>
+              </div>
 
               <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem", marginBottom: "1.5rem" }}>
                 <button
@@ -631,7 +764,8 @@ export default function PlannerChatPage() {
               >
                 {isGenerating ? (
                   <span style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-                    <span className="animate-pulse">🌱</span> Grounding with evidence & building plan...
+                    <span className="animate-pulse">🌱</span>{" "}
+                    {monthlyProgress ?? "Grounding with evidence & building plan…"}
                   </span>
                 ) : (
                   "Generate My Plan Preview →"
