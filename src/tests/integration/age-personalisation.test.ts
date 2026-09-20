@@ -2,8 +2,10 @@ import { describe, it, expect, beforeAll } from "vitest";
 import { ensureEvidenceSeeded } from "../../lib/evidence/seed";
 import { generateSingleActivity } from "../../lib/generation/pipeline";
 import { composeMonthlyPlanner } from "../../lib/generation/composer";
-import { evaluateActivitySafety } from "../../lib/generation/safety";
+import { evaluateActivitySafety, validateMaterialsAllowlist } from "../../lib/generation/safety";
 import { normalizePlannerPreferences, PlannerPreferences } from "../../lib/schemas/preferences";
+import { signGenerationToken, verifyGenerationToken } from "../../lib/session/generationToken";
+import { titleExistsInPlan } from "../../lib/generation/similarity";
 
 describe("Production Personalisation & Age Safety Suite", () => {
   beforeAll(async () => {
@@ -168,4 +170,110 @@ describe("Production Personalisation & Age Safety Suite", () => {
     // Ensure activities across 28 days are not identical
     expect(allTitles.size).toBeGreaterThan(5);
   }, 25000);
+
+  it("Scenario F: Stateless generation token signs and verifies reliably for monthly chunks", () => {
+    const genId = "00000000-0000-0000-0000-000000000001";
+    const token = signGenerationToken(genId);
+    expect(typeof token).toBe("string");
+    expect(token.length).toBeGreaterThan(10);
+
+    // Verifies with same ID
+    expect(verifyGenerationToken(genId, token)).toBe(true);
+
+    // Fails with mismatched ID
+    expect(verifyGenerationToken("different-id", token)).toBe(false);
+
+    // Fails with forged or tampered token
+    expect(verifyGenerationToken(genId, token.slice(0, -4) + "abcd")).toBe(false);
+    expect(verifyGenerationToken(genId, "invalid-token")).toBe(false);
+  });
+
+  it("Scenario G: Regeneration novelty check strictly excludes plan-wide duplicate titles", async () => {
+    const teenPrefs = normalizePlannerPreferences({
+      ageBand: "13+",
+      interests: ["science", "cooking"],
+      goals: ["problem_solving"],
+      householdItemsOnly: true,
+    });
+
+    const day3Activity = await generateSingleActivity({
+      sessionId: "novelty-test-session",
+      preferences: teenPrefs,
+      dayNumber: 3,
+    });
+
+    // Simulate regenerating Day 1 with Day 3's title in the exclude list
+    const regeneratedDay1 = await generateSingleActivity({
+      sessionId: "novelty-test-session",
+      preferences: teenPrefs,
+      dayNumber: 1,
+      excludeTitles: [day3Activity.title, "Culinary Surface Tension & Capillary Action Investigation"],
+    });
+
+    expect(regeneratedDay1.title).not.toEqual(day3Activity.title);
+    expect(titleExistsInPlan(regeneratedDay1.title, [day3Activity.title])).toBe(false);
+  });
+
+  it("Scenario H: Regenerated activity maintains full bibliographic evidence metadata", async () => {
+    const prefs = normalizePlannerPreferences({
+      ageBand: "6-7",
+      interests: ["space", "science"],
+      goals: ["learning"],
+    });
+
+    const regenerated = await generateSingleActivity({
+      sessionId: "evidence-parity-session",
+      preferences: prefs,
+      dayNumber: 2,
+    });
+
+    expect(regenerated.evidence).toBeDefined();
+    expect(regenerated.evidence.length).toBeGreaterThan(0);
+
+    const primaryEv = regenerated.evidence[0];
+    expect(primaryEv.sourceTitle).toBeDefined();
+    expect(typeof primaryEv.sourceTitle).toBe("string");
+    expect((primaryEv.sourceTitle as string).length).toBeGreaterThan(5);
+    expect(primaryEv.organizationAuthors).toBeDefined();
+    expect(primaryEv.publicationYear).toBeDefined();
+    expect(primaryEv.evidenceStrength).toBeDefined();
+    expect(["strong", "moderate", "limited"]).toContain(primaryEv.evidenceStrength);
+  });
+
+  it("Scenario I: Toddler safety evaluates variations and enforces materials allowlist", () => {
+    // 1. Choking hazard in extension should fail toddler safety
+    const unsafeToddlerActivity = {
+      id: "test-unsafe-1",
+      title: "Sensory Texture Bin",
+      targetAgeBand: "2-3" as const,
+      description: "Explore textures in a tray.",
+      instructions: ["Touch the smooth objects."],
+      materials: ["household containers"],
+      setupMinutes: 2,
+      activityMinutes: { min: 10, max: 15 },
+      supervisionLevel: "active_supervision" as const,
+      parentSetup: ["Set out tray."],
+      developmentalDomains: ["sensory"],
+      rationale: "Sensory exploration develops tactile processing.",
+      evidence: [],
+      safetyNotes: ["Watch child."],
+      easyVariation: "Use flat fabric scraps.",
+      extension: "Hide small toy animals in a tub of dry rice for scooping.",
+      noveltySignature: "unsafe-rice:sensory",
+    };
+
+    const safetyResult = evaluateActivitySafety(unsafeToddlerActivity, "2-3");
+    expect(safetyResult.passed).toBe(false);
+    expect(safetyResult.violations.some((v) => v.toLowerCase().includes("choking"))).toBe(true);
+
+    // 2. Materials allowlist catches unselected supplies in instructions
+    const allowlistCheck = validateMaterialsAllowlist(
+      ["plain paper"],
+      [],
+      true, // householdOnly
+      "Spray the paper with food coloring and wipe with shaving cream"
+    );
+    expect(allowlistCheck.passed).toBe(false);
+    expect(allowlistCheck.offendingMaterials.some((v) => v.toLowerCase().includes("food coloring"))).toBe(true);
+  });
 });

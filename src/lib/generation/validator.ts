@@ -58,7 +58,16 @@ function validateMaterials(
     ? prefs.householdItemsOnly
     : (typeof prefs.householdMaterialsOnly === "boolean" ? prefs.householdMaterialsOnly : true);
 
-  const result = validateMaterialsAllowlist(activity.materials, selected, householdOnly);
+  const fullText = [
+    activity.title || "",
+    activity.description || "",
+    ...(activity.instructions || []),
+    ...(activity.parentSetup || []),
+    activity.easyVariation || "",
+    activity.extension || "",
+  ].join(" ");
+
+  const result = validateMaterialsAllowlist(activity.materials, selected, householdOnly, fullText);
   if (!result.passed) {
     return {
       passed: false,
@@ -154,7 +163,15 @@ function validateEnvironment(
     }
   }
 
-  if (env === "indoors" && (allText.includes("in the garden") || allText.includes("in the yard") || allText.includes("outside in the grass"))) {
+  if (
+    env === "indoors" &&
+    (allText.includes("in the garden") ||
+      allText.includes("in the yard") ||
+      allText.includes("outside in the grass") ||
+      allText.includes("outdoor") ||
+      allText.includes("outdoors") ||
+      allText.includes("in the park"))
+  ) {
     return {
       passed: false,
       warnings: ["Indoor activity requires outdoor setting"],

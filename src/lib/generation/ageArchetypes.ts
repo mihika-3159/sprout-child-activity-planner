@@ -21,6 +21,7 @@ import {
   SupervisionLevel,
 } from "../schemas/preferences";
 import { RetrievedChunk } from "../evidence/retrieval";
+import { titleExistsInPlan } from "./similarity";
 
 interface DynamicArchetype {
   id: string;
@@ -28,6 +29,7 @@ interface DynamicArchetype {
   ageBand: AgeBand;
   mechanic: string;
   applicableInterests?: string[];
+  environments?: string[];
   generate: (params: {
     preferences: PlannerPreferences;
     evidence: RetrievedChunk;
@@ -39,6 +41,27 @@ interface DynamicArchetype {
 
 function cleanText(t: string): string {
   return t.replace(/_/g, " ").replace(/\s+/g, " ").trim();
+}
+
+export function normalizeInterestLabel(raw: string): string {
+  if (!raw) return "Discovery";
+  const lower = raw.toLowerCase().trim().replace(/_/g, " ");
+  if (lower.includes("animal")) return "Animal";
+  if (lower.includes("dino")) return "Dinosaur";
+  if (lower.includes("art") || lower.includes("draw")) return "Art";
+  if (lower.includes("build") || lower.includes("lego")) return "Building";
+  if (lower.includes("nature") || lower.includes("outdoor")) return "Nature";
+  if (lower.includes("stor") || lower.includes("read")) return "Story";
+  if (lower.includes("music") || lower.includes("dance")) return "Music";
+  if (lower.includes("space")) return "Space";
+  if (lower.includes("sport") || lower.includes("move")) return "Movement";
+  if (lower.includes("pretend")) return "Imaginative";
+  if (lower.includes("sci") || lower.includes("stem")) return "Science";
+  if (lower.includes("puzzle") || lower.includes("logic")) return "Puzzle";
+  if (lower.includes("cook") || lower.includes("bake")) return "Kitchen Discovery";
+  if (lower.includes("vehicle") || lower.includes("car") || lower.includes("train")) return "Vehicle";
+  const cleaned = cleanText(raw);
+  return cleaned.charAt(0).toUpperCase() + cleaned.slice(1);
 }
 
 // ─── AGE 2–3 ARCHETYPES (Sensory, Movement, Toddler Oral Language) ────────────
@@ -151,7 +174,7 @@ const TODDLER_ARCHETYPES: DynamicArchetype[] = [
     mechanic: "box_peek",
     generate: ({ preferences, evidence, dayNumber, interest }) => {
       const id = uuidv4();
-      const interestLabel = cleanText(interest);
+      const interestLabel = normalizeInterestLabel(interest);
       return {
         id,
         title: `Cardboard ${interestLabel} Hideaway`,
@@ -159,7 +182,7 @@ const TODDLER_ARCHETYPES: DynamicArchetype[] = [
         description: `Open the ends of a sturdy cardboard box to create an open crawl-through archway themed around ${interestLabel.toLowerCase()}.`,
         instructions: [
           "Open both top and bottom flaps of a medium-to-large clean box so both sides are completely open.",
-          `Place it on the rug and call out cheerful ${interestLabel.toLowerCase()} sounds through the tunnel.`,
+          "Place it on the rug and call out cheerful sounds through the tunnel.",
           "Encourage your toddler to crawl through and giggle on the other side."
         ],
         materials: ["cardboard box"],
@@ -200,22 +223,22 @@ const TODDLER_ARCHETYPES: DynamicArchetype[] = [
     mechanic: "sponge_stack",
     generate: ({ preferences, evidence, dayNumber, interest }) => {
       const id = uuidv4();
-      const interestLabel = cleanText(interest);
+      const interestLabel = normalizeInterestLabel(interest);
       return {
         id,
         title: `${interestLabel} Sponge Block Tower`,
         targetAgeBand: "2-3",
-        description: `Your toddler stacks soft, dry cleaning sponges into towers and knocks them down without any noise or sharp edges.`,
+        description: `Your toddler stacks soft, clean sponges into towers and knocks them down without any noise or sharp edges.`,
         instructions: [
           "Set out 3 to 5 clean, dry kitchen sponges on a flat surface.",
-          `Stack two sponges into a little tower and say: 'Look at the ${interestLabel.toLowerCase()} home!'`,
+          `Stack two sponges into a little tower and say: 'Look at the ${interestLabel.toLowerCase()} tower!'`,
           "Let your toddler knock the tower down with their hand, then try balancing one sponge on top of another."
         ],
         materials: ["household containers"],
         setupMinutes: 1,
         activityMinutes: { min: 10, max: 15 },
-        supervisionLevel: "setup_then_independent",
-        parentSetup: ["Provide new, dry cellulose sponges with no cleaning chemicals."],
+        supervisionLevel: "active_supervision",
+        parentSetup: ["Provide whole, clean, dry cellulose sponges with no cleaning chemicals."],
         developmentalDomains: ["fine_motor", "problem_solving", "cause_and_effect"],
         rationale: `Builds early grasp calibration and cause-and-effect understanding using silent, soft building blocks. Grounded in research from ${evidence.sourceTitle}.`,
         whyEngaging: "Knocking down towers is pure toddler comedy, and sponges stack easily without tumbling with a loud clatter.",
@@ -233,7 +256,7 @@ const TODDLER_ARCHETYPES: DynamicArchetype[] = [
             evidenceStrength: evidence.evidenceStrength,
           },
         ],
-        safetyNotes: ["Dry clean sponges only. Do not use wet sponges or cut sponges into small bite-sized pieces."],
+        safetyNotes: ["Active adult supervision required. Dry clean sponges only. Do not cut sponges into small bite-sized pieces."],
         easyVariation: "Drop sponges into a large plastic laundry basket or pot.",
         extension: "Count 'One, two, three, crash!' together each time a tower falls.",
         noveltySignature: `toddler-sponge-d${dayNumber}:${interest}`,
@@ -249,7 +272,7 @@ const TODDLER_ARCHETYPES: DynamicArchetype[] = [
     mechanic: "water_scoop",
     generate: ({ preferences, evidence, dayNumber, interest }) => {
       const id = uuidv4();
-      const interestLabel = cleanText(interest);
+      const interestLabel = normalizeInterestLabel(interest);
       return {
         id,
         title: `Shallow Water ${interestLabel} Splash Basin`,
@@ -283,7 +306,7 @@ const TODDLER_ARCHETYPES: DynamicArchetype[] = [
           },
         ],
         safetyNotes: ["Constant arms-length adult supervision required around all water. Empty dish immediately when done."],
-        easyVariation: "Use dry rice or large pasta in the dish if you prefer to avoid water.",
+        easyVariation: "Float a clean washcloth on the water surface to squeeze and lift.",
         extension: "Drop a plastic spoon from 2 inches high to see the tiny water ripples.",
         noveltySignature: `toddler-water-d${dayNumber}:${interest}`,
         chokingHazardChecked: true,
@@ -298,7 +321,7 @@ const TODDLER_ARCHETYPES: DynamicArchetype[] = [
     mechanic: "paper_scrunch",
     generate: ({ preferences, evidence, dayNumber, interest }) => {
       const id = uuidv4();
-      const interestLabel = cleanText(interest);
+      const interestLabel = normalizeInterestLabel(interest);
       return {
         id,
         title: `${interestLabel} Crinkle Paper Rollers`,
@@ -347,7 +370,7 @@ const TODDLER_ARCHETYPES: DynamicArchetype[] = [
     mechanic: "rhythm_tap",
     generate: ({ preferences, evidence, dayNumber, interest }) => {
       const id = uuidv4();
-      const interestLabel = cleanText(interest);
+      const interestLabel = normalizeInterestLabel(interest);
       return {
         id,
         title: `${interestLabel} Rhythm Drum Session`,
@@ -355,7 +378,7 @@ const TODDLER_ARCHETYPES: DynamicArchetype[] = [
         description: `Turn an empty plastic tub or bowl upside down and use a wooden spoon to tap out slow and fast rhythmic beats.`,
         instructions: [
           "Place an upside-down plastic mixing bowl or storage tub on the floor mat.",
-          `Hand your child a wooden spoon and demonstrate tapping slowly like a gentle ${interestLabel.toLowerCase()}.`,
+          "Hand your child a wooden spoon and demonstrate tapping slowly and rhythmically.",
           "Switch between tapping very softly like a mouse and tapping with a steady rhythm together."
         ],
         materials: ["household containers", "spoons"],
@@ -409,12 +432,14 @@ const TEEN_ARCHETYPES: DynamicArchetype[] = [
         description: "Design, construct, and calibrate three distinct paper lifting-body glider prototypes. Alter wing dihedral angle and center-of-mass weighting to analyze aerodynamic glide stability over recorded trials.",
         instructions: [
           "Construct two baseline paper gliders using identical sheets of paper: one with a wide delta-wing profile and one with a narrow fuselage.",
-          "Add folded paper ballast or a single strip of tape to the nose to shift the center of gravity forward of the center of lift.",
+          "Add folded paper ballast to the nose to shift the center of gravity forward of the center of lift.",
           "Conduct 5 controlled horizontal test launches along an unobstructed hallway, recording estimated flight distance and roll stability in a notebook.",
           "Incorporate a 10-degree upward dihedral bend to the wingtips on Prototype B and compare against the flat-wing baseline.",
           "Analyze the resulting flight data to determine how dihedral angle counteracts roll instability during unpowered descent."
         ],
-        materials: ["plain paper", "tape"],
+        materials: (preferences.selectedMaterials || preferences.materials || []).some((m) => m.toLowerCase().includes("tape"))
+          ? ["plain paper", "tape"]
+          : ["plain paper"],
         setupMinutes: 3,
         activityMinutes: { min: 30, max: 45 },
         supervisionLevel: "independent",
@@ -451,6 +476,7 @@ const TEEN_ARCHETYPES: DynamicArchetype[] = [
     ageBand: "13+",
     mechanic: "scale_computation",
     applicableInterests: ["space", "science", "learning"],
+    environments: ["indoors", "outdoors", "any"],
     generate: ({ preferences, evidence, dayNumber, interest }) => {
       const id = uuidv4();
       return {
@@ -461,11 +487,11 @@ const TEEN_ARCHETYPES: DynamicArchetype[] = [
         instructions: [
           "Establish a linear distance scale where 10 meters represents the distance from the Sun to Neptune (30.1 AU), making 1 AU approximately 33.3 cm.",
           "Calculate the scaled placement distances from the Sun for Mercury (0.39 AU), Venus (0.72 AU), Earth (1.0 AU), Mars (1.52 AU), and Jupiter (5.2 AU).",
-          "Mark each planetary position along a hallway using labeled paper cards placed at your calculated centimeter measurements.",
+          "Mark each planetary position along a hallway using labeled paper card markers placed at your calculated centimeter measurements.",
           "Observe the dramatic spatial clustering of the four terrestrial inner planets compared to the vast emptiness separating the gas giants.",
           "Record a brief analytical reflection on why planetary distance scales make human interplanetary transit logistically complex."
         ],
-        materials: ["plain paper", "pencils and crayons", "tape"],
+        materials: ["plain paper", "pencils and crayons", "books"],
         setupMinutes: 5,
         activityMinutes: { min: 35, max: 50 },
         supervisionLevel: "independent",
@@ -487,7 +513,7 @@ const TEEN_ARCHETYPES: DynamicArchetype[] = [
             evidenceStrength: evidence.evidenceStrength,
           },
         ],
-        safetyNotes: ["Secure paper markers with low-tack tape to prevent slipping underfoot."],
+        safetyNotes: ["Place paper markers flat or folded so they do not slide underfoot."],
         easyVariation: "Use a simplified scale where 1 meter equals 5 AU to fit smaller rooms.",
         extension: "Calculate the scale diameter that the Sun and Earth would have on your 10-meter model and note why drawing them to scale is nearly impossible.",
         noveltySignature: `teen-scale-d${dayNumber}:${interest}`,
@@ -498,32 +524,33 @@ const TEEN_ARCHETYPES: DynamicArchetype[] = [
   },
   {
     id: "teen-cooking-chemistry",
-    theme: "Culinary Science & Emulsion Kinetics",
+    theme: "Culinary Science & Fluid Dynamics",
     ageBand: "13+",
-    mechanic: "emulsion_kinetics",
+    mechanic: "fluid_dynamics",
     applicableInterests: ["cooking", "science", "problem_solving"],
+    environments: ["indoors", "apartment_small_indoor", "any"],
     generate: ({ preferences, evidence, dayNumber, interest }) => {
       const id = uuidv4();
       return {
         id,
-        title: "Culinary Emulsion & Surface Chemistry Investigation",
+        title: "Culinary Surface Tension & Capillary Action Investigation",
         targetAgeBand: "13+",
-        description: "Investigate colloidal chemistry and molecular polarity by testing how natural household surfactants stabilize liquid suspensions.",
+        description: "Investigate fluid dynamics and molecular cohesion in culinary science by analyzing water surface tension, meniscus curvature, and paper capillary flow.",
         instructions: [
-          "Fill two clear glasses with equal parts tap water and a thin layer of cooking oil or water mixed with food scraps.",
-          "Shake or stir glass A vigorously with a spoon and time how many seconds it takes for the oil and water layers to completely separate.",
-          "In glass B, introduce a single drop of a surfactant (like dish soap or mustard paste) before stirring identically.",
-          "Document the time required for layer separation and describe the physical appearance of the micelle suspension.",
-          "Diagram the molecular mechanism showing how amphiphilic molecules bind hydrophobic and hydrophilic regions simultaneously."
+          "Fill a clear drinking glass to the very brim with tap water, observing the flat surface line from eye level.",
+          "Use a teaspoon to carefully add individual water droplets one by one, recording how many drops can be added before the convex meniscus breaks.",
+          "Cut a 2-centimeter-wide strip of plain paper and suspend the bottom tip into the water container.",
+          "Measure and record the height in millimeters that capillary action draws the liquid up through the cellulose fiber matrix over 3 minutes.",
+          "Diagram the molecular hydrogen bonding dipole network that explains water's unusually high cohesive surface tension."
         ],
         materials: ["water", "household containers", "spoons", "plain paper"],
-        setupMinutes: 5,
+        setupMinutes: 3,
         activityMinutes: { min: 30, max: 45 },
         supervisionLevel: "independent",
-        parentSetup: ["Set out clear reusable glasses or jars on a wipeable kitchen counter."],
+        parentSetup: ["Set out clear reusable glasses or cups on a wipeable kitchen counter."],
         developmentalDomains: ["science", "problem_solving", "learning"],
         rationale: `Fosters conceptual understanding of molecular polarity, surface tension, and empirical testing protocols. Grounded in research from ${evidence.sourceTitle}.`,
-        whyEngaging: "Connects everyday kitchen phenomena directly to fundamental molecular chemistry through clear, observable phase transitions.",
+        whyEngaging: "Observing water bulge upwards in a visible dome before spilling reveals the powerful invisible molecular forces governing everyday culinary fluids.",
         evidence: [
           {
             sourceId: evidence.sourceId,
@@ -538,9 +565,9 @@ const TEEN_ARCHETYPES: DynamicArchetype[] = [
             evidenceStrength: evidence.evidenceStrength,
           },
         ],
-        safetyNotes: ["Wipe liquid spills promptly. Dispose of test solutions down the sink with warm water."],
-        easyVariation: "Test liquid honey or milk as alternative surfactant candidates.",
-        extension: "Graph the separation time curve across three distinct surfactant concentrations.",
+        safetyNotes: ["Wipe liquid spills promptly with a towel to prevent slippery floor surfaces."],
+        easyVariation: "Compare capillary rise speed between plain paper and a clean scrap if available.",
+        extension: "Calculate the rate of capillary flow in millimeters per minute across the first 3 minutes.",
         noveltySignature: `teen-culinary-d${dayNumber}:${interest}`,
         chokingHazardChecked: true,
         materialRiskChecked: true,
@@ -553,6 +580,7 @@ const TEEN_ARCHETYPES: DynamicArchetype[] = [
     ageBand: "13+",
     mechanic: "structural_truss",
     applicableInterests: ["building", "science", "problem_solving"],
+    environments: ["indoors", "apartment_small_indoor", "any"],
     generate: ({ preferences, evidence, dayNumber, interest }) => {
       const id = uuidv4();
       return {
@@ -561,13 +589,15 @@ const TEEN_ARCHETYPES: DynamicArchetype[] = [
         targetAgeBand: "13+",
         description: "Design and build a 30-centimeter bridge span using only rolled paper tubes and tape, engineered to bear maximum vertical load with minimal material mass.",
         instructions: [
-          "Tightly roll single sheets of paper around a pencil into rigid cylindrical struts and secure each with a single piece of tape.",
+          "Tightly roll single sheets of paper around a pencil into rigid cylindrical struts with interlocking folded ends or secured with tape if available.",
           "Design a planar triangular truss structure (such as a Warren or Pratt truss design) on paper before assembly.",
-          "Assemble the paper struts using tape joints to bridge a 30-centimeter gap between two tables or books.",
+          "Assemble the paper struts using interlocking folds or tape joints to bridge a 30-centimeter gap between two tables or books.",
           "Gradually test structural load by placing small books or containers on the center span until deflection occurs.",
           "Document which structural member experienced tension versus compression failure and sketch a design modification to reinforce the critical joint."
         ],
-        materials: ["plain paper", "tape", "books"],
+        materials: (preferences.selectedMaterials || preferences.materials || []).some((m) => m.toLowerCase().includes("tape"))
+          ? ["plain paper", "tape", "books"]
+          : ["plain paper", "cardboard", "books"],
         setupMinutes: 5,
         activityMinutes: { min: 40, max: 60 },
         supervisionLevel: "independent",
@@ -604,6 +634,7 @@ const TEEN_ARCHETYPES: DynamicArchetype[] = [
     ageBand: "13+",
     mechanic: "transect_fieldwork",
     applicableInterests: ["nature", "science", "animals"],
+    environments: ["outdoors", "garden_outdoor_available"],
     generate: ({ preferences, evidence, dayNumber, interest }) => {
       const id = uuidv4();
       return {
@@ -863,9 +894,10 @@ const EARLY_PRIMARY_ARCHETYPES: DynamicArchetype[] = [
     theme: "Nature Specimen Classification",
     ageBand: "6-7",
     mechanic: "nature_sorting",
+    environments: ["outdoors", "garden_outdoor_available"],
     generate: ({ preferences, evidence, dayNumber, interest }) => {
       const id = uuidv4();
-      const interestLabel = cleanText(interest);
+      const interestLabel = normalizeInterestLabel(interest);
       return {
         id,
         title: `${interestLabel} Outdoor Specimen Sorting`,
@@ -916,7 +948,7 @@ const EARLY_PRIMARY_ARCHETYPES: DynamicArchetype[] = [
     mechanic: "bridge_span",
     generate: ({ preferences, evidence, dayNumber, interest }) => {
       const id = uuidv4();
-      const interestLabel = cleanText(interest);
+      const interestLabel = normalizeInterestLabel(interest);
       return {
         id,
         title: `${interestLabel} Cardboard Bridge Engineering`,
@@ -967,7 +999,7 @@ const EARLY_PRIMARY_ARCHETYPES: DynamicArchetype[] = [
     mechanic: "picture_cipher",
     generate: ({ preferences, evidence, dayNumber, interest }) => {
       const id = uuidv4();
-      const interestLabel = cleanText(interest);
+      const interestLabel = normalizeInterestLabel(interest);
       return {
         id,
         title: `${interestLabel} Secret Symbol Cipher`,
@@ -1018,7 +1050,7 @@ const EARLY_PRIMARY_ARCHETYPES: DynamicArchetype[] = [
     mechanic: "drop_steering",
     generate: ({ preferences, evidence, dayNumber, interest }) => {
       const id = uuidv4();
-      const interestLabel = cleanText(interest);
+      const interestLabel = normalizeInterestLabel(interest);
       return {
         id,
         title: `${interestLabel} Water Drop Obstacle Maze`,
@@ -1026,12 +1058,12 @@ const EARLY_PRIMARY_ARCHETYPES: DynamicArchetype[] = [
         description: `Draw a winding maze path on paper, cover with a smooth surface or tape, and steer a bead of water from start to finish.`,
         instructions: [
           "Draw a winding path with 2 dead ends on a sheet of paper.",
-          "Cover the paper with clear tape strips or lay a plastic sheet on top to make it waterproof.",
+          "Cover the paper with a clean plastic container lid, baking sheet, or smooth plastic sheet to make it water-resistant.",
           "Use a spoon to drop a single round water bead at the starting line.",
-          "Tilt the paper gently or guide the water drop with the wooden end of a pencil through the maze.",
+          "Tilt the surface gently or guide the water drop with the wooden end of a pencil through the maze.",
           `Cheer when your water droplet reaches the ${interestLabel.toLowerCase()} finish line without splitting!`
         ],
-        materials: ["plain paper", "tape", "water", "spoons"],
+        materials: ["plain paper", "household containers", "water", "spoons"],
         setupMinutes: 3,
         activityMinutes: { min: 20, max: 30 },
         supervisionLevel: "setup_then_independent",
@@ -1069,7 +1101,7 @@ const EARLY_PRIMARY_ARCHETYPES: DynamicArchetype[] = [
     mechanic: "hand_shadows",
     generate: ({ preferences, evidence, dayNumber, interest }) => {
       const id = uuidv4();
-      const interestLabel = cleanText(interest);
+      const interestLabel = normalizeInterestLabel(interest);
       return {
         id,
         title: `${interestLabel} Light & Shadow Story Theater`,
@@ -1078,11 +1110,11 @@ const EARLY_PRIMARY_ARCHETYPES: DynamicArchetype[] = [
         instructions: [
           "Position a lamp safely so it shines against a clear wall or table surface.",
           "Hold your hands between the lamp and wall to create bird, rabbit, and monster silhouettes.",
-          `Draw a simple ${interestLabel.toLowerCase()} silhouette on paper and tape it to a pencil.`,
+          `Draw a simple ${interestLabel.toLowerCase()} silhouette on paper and fold a small base or prop it against a cup.`,
           "Notice how moving closer to the light makes the shadow giant, and moving farther makes it tiny and sharp.",
           "Perform a short 2-minute dialogue between your two shadow characters."
         ],
-        materials: ["plain paper", "pencils and crayons", "tape"],
+        materials: ["plain paper", "pencils and crayons", "household containers"],
         setupMinutes: 3,
         activityMinutes: { min: 20, max: 35 },
         supervisionLevel: "setup_then_independent",
@@ -1131,9 +1163,11 @@ export function generateAgeCalibratedActivity(params: {
   evidence: RetrievedChunk;
   dayNumber: number;
   excludeTitle?: string;
+  excludeTitles?: string[];
   excludeMechanic?: string;
+  excludeMechanics?: string[];
 }): PlannedActivity {
-  const { preferences, evidence, dayNumber, excludeTitle, excludeMechanic } = params;
+  const { preferences, evidence, dayNumber, excludeTitle, excludeTitles, excludeMechanic, excludeMechanics } = params;
   const ageBand = preferences.ageBand || preferences.child?.ageBand || "4-5";
   const archetypes = getArchetypesForAgeBand(ageBand);
 
@@ -1146,39 +1180,72 @@ export function generateAgeCalibratedActivity(params: {
 
   const interest = interestsList[(dayNumber - 1) % interestsList.length];
 
-  // Pick an archetype that does NOT match excludeMechanic
-  const candidateArchetypes = archetypes.filter(
-    (a) =>
-      !excludeMechanic ||
-      (a.mechanic !== excludeMechanic &&
-       !excludeMechanic.toLowerCase().includes(a.mechanic.toLowerCase()) &&
-       !a.mechanic.toLowerCase().includes(excludeMechanic.toLowerCase()) &&
-       !a.id.toLowerCase().includes(excludeMechanic.toLowerCase()) &&
-       !excludeMechanic.toLowerCase().includes(a.id.toLowerCase()))
-  );
-  const pool = candidateArchetypes.length > 0 ? candidateArchetypes : archetypes;
-  const selectedArchetype = pool[(dayNumber - 1) % pool.length];
+  // Environment filter: if indoor-only, prefer archetypes that support indoor/apartment/any
+  const userEnv = preferences.environment;
+  const isIndoorOnly = userEnv === "indoors" || userEnv === "apartment_small_indoor";
+  let eligibleArchetypes = archetypes;
+  if (isIndoorOnly) {
+    const indoorCandidates = archetypes.filter((a) => {
+      if (!a.environments || a.environments.length === 0) return true;
+      return a.environments.some((e) => e === "indoors" || e === "apartment_small_indoor" || e === "any");
+    });
+    if (indoorCandidates.length > 0) {
+      eligibleArchetypes = indoorCandidates;
+    }
+  }
 
+  // Mechanic filtering
+  const allExcludedMechanics = [
+    ...(excludeMechanic ? [excludeMechanic] : []),
+    ...(excludeMechanics || []),
+  ].map((m) => m.toLowerCase().trim());
+
+  const candidateArchetypes = eligibleArchetypes.filter((a) => {
+    if (allExcludedMechanics.length === 0) return true;
+    const aMech = a.mechanic.toLowerCase();
+    const aId = a.id.toLowerCase();
+    return !allExcludedMechanics.some(
+      (ex) => aMech === ex || ex.includes(aMech) || aMech.includes(ex) || aId.includes(ex) || ex.includes(aId)
+    );
+  });
+  const pool = candidateArchetypes.length > 0 ? candidateArchetypes : eligibleArchetypes;
+
+  // Title exclusion list
+  const allExcludedTitles = [
+    ...(excludeTitle ? [excludeTitle] : []),
+    ...(excludeTitles || []),
+  ].filter(Boolean);
+
+  // Try candidate archetypes starting from day offset, searching for one whose title does not collide
+  let selectedArchetype = pool[(dayNumber - 1) % pool.length];
   let activity = selectedArchetype.generate({
     preferences,
     evidence,
     dayNumber,
     interest,
-    excludeMechanic,
+    excludeMechanic: allExcludedMechanics[0],
   });
 
-  // If title happens to match excluded title, vary it by picking a different archetype
-  if (excludeTitle && activity.title.toLowerCase().trim() === excludeTitle.toLowerCase().trim()) {
-    const remaining = pool.filter((a) => a.id !== selectedArchetype.id);
-    const altPool = remaining.length > 0 ? remaining : archetypes.filter((a) => a.id !== selectedArchetype.id);
-    const altArchetype = (altPool.length > 0 ? altPool : archetypes)[dayNumber % (altPool.length || 1)];
-    activity = altArchetype.generate({
-      preferences,
-      evidence,
-      dayNumber,
-      interest,
-      excludeMechanic,
-    });
+  if (allExcludedTitles.length > 0 && titleExistsInPlan(activity.title, allExcludedTitles)) {
+    // Look through other archetypes in the pool (or eligibleArchetypes)
+    const alternatives = pool.filter((a) => a.id !== selectedArchetype.id);
+    const searchList = alternatives.length > 0 ? alternatives : archetypes.filter((a) => a.id !== selectedArchetype.id);
+
+    for (let i = 0; i < searchList.length; i++) {
+      const alt = searchList[(dayNumber + i) % searchList.length];
+      const altActivity = alt.generate({
+        preferences,
+        evidence,
+        dayNumber,
+        interest,
+        excludeMechanic: allExcludedMechanics[0],
+      });
+      if (!titleExistsInPlan(altActivity.title, allExcludedTitles)) {
+        activity = altActivity;
+        selectedArchetype = alt;
+        break;
+      }
+    }
   }
 
   // Adjust duration min/max strictly to preferences
@@ -1209,3 +1276,4 @@ export function generateAgeCalibratedActivity(params: {
 
   return activity;
 }
+

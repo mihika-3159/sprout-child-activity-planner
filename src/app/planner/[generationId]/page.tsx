@@ -316,7 +316,13 @@ export default function FullPlannerPage() {
                     >
                       {isRegenerating ? "Generating..." : "🔄 Try Different Activity"}
                     </button>
-                    <span className="evidence-badge evidence-badge-strong">Vetted</span>
+                    {act.evidence?.[0]?.sourceTitle ? (
+                      <span className="evidence-badge evidence-badge-strong">Research-linked</span>
+                    ) : act.rationale ? (
+                      <span className="evidence-badge evidence-badge-moderate">Developmental rationale</span>
+                    ) : (
+                      <span className="evidence-badge evidence-badge-limited">General principle</span>
+                    )}
                   </div>
                 </div>
 

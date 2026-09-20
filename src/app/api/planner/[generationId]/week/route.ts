@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getOrCreateSession } from "@/lib/session/anonymous";
+import { getOrCreateSession, setSessionCookie } from "@/lib/session/anonymous";
+import { verifyGenerationToken } from "@/lib/session/generationToken";
 import { getDb } from "@/lib/db/schema";
 import { PlannerPreferences, PlannedActivity, MonthlyPlanner } from "@/lib/schemas/preferences";
 import { generateSingleActivity } from "@/lib/generation/pipeline";
@@ -16,7 +17,7 @@ export async function POST(
   { params }: { params: Promise<{ generationId: string }> }
 ) {
   try {
-    const { sessionId } = await getOrCreateSession();
+    const { sessionId, token } = await getOrCreateSession();
     const { generationId } = await params;
 
     const body = await request.json();
@@ -40,9 +41,16 @@ export async function POST(
       return NextResponse.json({ error: "Generation not found" }, { status: 404 });
     }
 
-    // Security: only owner can request chunk generation
-    if (generation.session_id !== sessionId) {
-      return NextResponse.json({ error: "Unauthorised" }, { status: 403 });
+    // Security: owner via session cookie OR bearer of valid generationToken HMAC
+    const genTokenHeader = request.headers.get("x-generation-token");
+    const isTokenValid = Boolean(genTokenHeader && verifyGenerationToken(generationId, genTokenHeader));
+    const isOwner = generation.session_id === sessionId;
+
+    if (!isOwner && !isTokenValid) {
+      return NextResponse.json(
+        { error: "Unauthorised" },
+        { status: 401 }
+      );
     }
 
     if (generation.product_type !== "monthly") {
@@ -52,36 +60,46 @@ export async function POST(
     const preferences: PlannerPreferences = JSON.parse(generation.preferences);
     const theme = WEEKLY_THEMES[weekNumber - 1];
 
-    // Generate all 7 days for this week concurrently
-    const dayIndices = [1, 2, 3, 4, 5, 6, 7];
-    const weekActivities = await Promise.all(
-      dayIndices.map((dayNum) =>
-        generateSingleActivity({
-          sessionId,
-          preferences,
-          dayNumber: (weekNumber - 1) * 7 + dayNum,
-          targetDomain: theme,
-        })
-      )
-    );
+    // Check if this week's activities are already generated (idempotent retry)
+    const existingWeekRows = db.prepare(
+      `SELECT day_number, activity_data FROM planner_activities WHERE generation_id = ? AND week_number = ? ORDER BY day_number`
+    ).all(generationId, weekNumber) as { day_number: number; activity_data: string }[];
 
-    // Persist each activity in planner_activities
-    for (let i = 0; i < weekActivities.length; i++) {
-      const act = weekActivities[i];
-      const dayNum = i + 1;
-      db.prepare(`
-        INSERT OR REPLACE INTO planner_activities (
-          id, generation_id, week_number, day_number, activity_index, activity_data, novelty_signature
-        ) VALUES (?, ?, ?, ?, ?, ?, ?)
-      `).run(
-        act.id,
-        generationId,
-        weekNumber,
-        dayNum,
-        0,
-        JSON.stringify(act),
-        act.noveltySignature
+    let weekActivities: PlannedActivity[];
+    if (existingWeekRows.length >= 7) {
+      weekActivities = existingWeekRows.map((r) => JSON.parse(r.activity_data));
+    } else {
+      // Generate all 7 days for this week concurrently
+      const dayIndices = [1, 2, 3, 4, 5, 6, 7];
+      weekActivities = await Promise.all(
+        dayIndices.map((dayNum) =>
+          generateSingleActivity({
+            sessionId: generation.session_id,
+            preferences,
+            dayNumber: (weekNumber - 1) * 7 + dayNum,
+            targetDomain: theme,
+          })
+        )
       );
+
+      // Persist each activity in planner_activities
+      for (let i = 0; i < weekActivities.length; i++) {
+        const act = weekActivities[i];
+        const dayNum = i + 1;
+        db.prepare(`
+          INSERT OR REPLACE INTO planner_activities (
+            id, generation_id, week_number, day_number, activity_index, activity_data, novelty_signature
+          ) VALUES (?, ?, ?, ?, ?, ?, ?)
+        `).run(
+          act.id,
+          generationId,
+          weekNumber,
+          dayNum,
+          0,
+          JSON.stringify(act),
+          act.noveltySignature
+        );
+      }
     }
 
     // Build the week data structure
@@ -144,7 +162,9 @@ export async function POST(
           optionalWeeklyThemes: WEEKLY_THEMES,
           numberOfLowSupervisionActivities: 20,
         },
-        prepThisMonth: `Consolidate everyday materials into an activity basket: ${materialsList.slice(0, 8).join(", ")}. Reusable across all 4 weeks without purchasing new craft kits.`,
+        prepThisMonth: (preferences.ageBand === "2-3" || preferences.child?.ageBand === "2-3")
+          ? `Consolidate everyday materials into an activity basket: ${materialsList.slice(0, 8).join(", ")}. Reusable across all 4 weeks to help you start each supervised activity quickly.`
+          : `Consolidate everyday materials into an activity basket: ${materialsList.slice(0, 8).join(", ")}. Reusable across all 4 weeks without purchasing new craft kits.`,
         weeks,
         globalMaterialsPool: materialsList,
       };
@@ -191,13 +211,15 @@ export async function POST(
         WHERE id = ?
       `).run(JSON.stringify(preview), JSON.stringify(fullMonthlyPlanner), generationId);
 
-      return NextResponse.json({
+      const response = NextResponse.json({
         success: true,
         week: weekData,
         isComplete: true,
         generationId,
         preview,
       });
+      if (token) setSessionCookie(response, token);
+      return response;
     }
 
     // Not yet complete — update status
@@ -205,12 +227,14 @@ export async function POST(
       "UPDATE planner_generations SET status = ?, updated_at = datetime('now') WHERE id = ?"
     ).run(`generating_week_${weekNumber}`, generationId);
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       week: weekData,
       isComplete: false,
       completedWeeks: Array.from(completedWeeks),
     });
+    if (token) setSessionCookie(response, token);
+    return response;
   } catch (err: unknown) {
     console.error("[Week Chunk Error]:", err);
     return NextResponse.json(

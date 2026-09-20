@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getOrCreateSession } from "@/lib/session/anonymous";
+import { getOrCreateSession, setSessionCookie } from "@/lib/session/anonymous";
 import { getDb } from "@/lib/db/schema";
 import { verifyEntitlement } from "@/lib/entitlement/check";
 import { generateSingleActivity } from "@/lib/generation/pipeline";
-import { PlannerPreferences, WeeklyPlanner, MonthlyPlanner } from "@/lib/schemas/preferences";
+import { titleExistsInPlan } from "@/lib/generation/similarity";
+import { PlannerPreferences, WeeklyPlanner, MonthlyPlanner, PlannedActivity } from "@/lib/schemas/preferences";
 import { rateLimitMiddleware } from "@/lib/rateLimit/rateLimiter";
 
 export async function POST(
@@ -11,7 +12,7 @@ export async function POST(
   { params }: { params: Promise<{ generationId: string }> }
 ) {
   try {
-    const { sessionId } = await getOrCreateSession();
+    const { sessionId, token } = await getOrCreateSession();
     const { generationId } = await params;
 
     // Rate limiting check
@@ -54,16 +55,66 @@ export async function POST(
 
     const preferences: PlannerPreferences = JSON.parse(generation.preferences);
 
-    // Generate new activity preserving all original constraints
-    // Exclude the current title and mechanic so the regenerated activity is genuinely different
-    const newActivity = await generateSingleActivity({
+    // Extract ALL existing titles and mechanics in the current plan to prevent duplication
+    const existingTitles: string[] = [];
+    const existingMechanics: string[] = [];
+
+    if (generation.product_type === "weekly") {
+      const weekly: WeeklyPlanner = JSON.parse(generation.full_data);
+      for (const d of weekly.days) {
+        for (const act of d.activities) {
+          if (act.title) existingTitles.push(act.title);
+          if (act.noveltySignature) existingMechanics.push(act.noveltySignature);
+        }
+      }
+    } else if (generation.product_type === "monthly") {
+      const monthly: MonthlyPlanner = JSON.parse(generation.full_data);
+      for (const w of monthly.weeks) {
+        for (const d of w.days) {
+          for (const act of d.activities) {
+            if (act.title) existingTitles.push(act.title);
+            if (act.noveltySignature) existingMechanics.push(act.noveltySignature);
+          }
+        }
+      }
+    }
+
+    if (currentTitle && !existingTitles.includes(currentTitle)) {
+      existingTitles.push(currentTitle);
+    }
+    if (currentMechanic && !existingMechanics.includes(currentMechanic)) {
+      existingMechanics.push(currentMechanic);
+    }
+
+    const targetDomain = preferences.goals[(dayNumber + activityIndex - 1) % (preferences.goals.length || 1)] || "creativity";
+
+    // Generate new activity preserving all original constraints and excluding all in-plan activities
+    let newActivity = await generateSingleActivity({
       sessionId,
       preferences,
       dayNumber,
       activityIndex,
+      targetDomain,
       excludeTitle: currentTitle,
+      excludeTitles: existingTitles,
       excludeMechanic: currentMechanic,
+      excludeMechanics: existingMechanics,
     });
+
+    // Plan-wide novelty verification: if title exists in plan, retry once with shifted seed
+    if (titleExistsInPlan(newActivity.title, existingTitles)) {
+      newActivity = await generateSingleActivity({
+        sessionId,
+        preferences,
+        dayNumber: dayNumber + 1,
+        activityIndex,
+        targetDomain,
+        excludeTitle: newActivity.title,
+        excludeTitles: [...existingTitles, newActivity.title],
+        excludeMechanic: currentMechanic,
+        excludeMechanics: existingMechanics,
+      });
+    }
 
     // Update in database planner_activities
     db.prepare(`
@@ -108,10 +159,12 @@ export async function POST(
       generation.product_type
     );
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       activity: newActivity,
     });
+    if (token) setSessionCookie(response, token);
+    return response;
   } catch (err: unknown) {
     console.error("[Regenerate Activity Error]:", err);
     return NextResponse.json(

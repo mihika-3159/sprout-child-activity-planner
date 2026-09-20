@@ -17,7 +17,6 @@ export interface SafetyCheckResult {
 
 // Low-risk whitelist for Age 2-3 allowing "setup_then_independent"
 const TODDLER_INDEPENDENT_WHITELIST_KEYWORDS = [
-  "sponge",
   "soft towel",
   "cushion",
   "large box",
@@ -57,6 +56,12 @@ const TODDLER_CHOKING_HAZARDS = [
   "dry bean",
   "dried beans",
   "uncooked rice",
+  "dry rice",
+  "rice",
+  "pasta",
+  "dry pasta",
+  "raw pasta",
+  "large pasta",
   "small pebble",
   "grape",
   "nut",
@@ -168,6 +173,8 @@ export function evaluateActivitySafety(
     ...(activity.instructions || []),
     ...(activity.materials || []),
     ...(activity.parentSetup || []),
+    activity.easyVariation || "",
+    activity.extension || "",
   ].join(" ");
 
   const violations: string[] = [];
@@ -281,7 +288,8 @@ export function evaluateActivitySafety(
 export function validateMaterialsAllowlist(
   activityMaterials: string[],
   selectedMaterials: string[],
-  householdOnly: boolean
+  householdOnly: boolean,
+  activityText?: string
 ): { passed: boolean; offendingMaterials: string[] } {
   if (!householdOnly) {
     return { passed: true, offendingMaterials: [] };
@@ -301,9 +309,6 @@ export function validateMaterialsAllowlist(
     "pencils_crayons",
     "pencil",
     "pen",
-    "tape",
-    "masking tape",
-    "painter's tape",
     "water",
     "water basin",
     "cup",
@@ -339,15 +344,39 @@ export function validateMaterialsAllowlist(
     "glue",
     "glue stick",
     "craft glue",
+    "tape",
+    "masking tape",
+    "painter's tape",
+    "sticky tape",
+    "scotch tape",
     "food colouring",
     "food coloring",
     "flashlight",
+    "torch",
     "dropper",
     "pipette",
     "spray bottle",
     "glitter",
     "pipe cleaner",
     "craft_supplies",
+    "oil",
+    "cooking oil",
+    "vegetable oil",
+    "dish soap",
+    "soap",
+    "mustard",
+    "honey",
+    "milk",
+    "food scraps",
+    "dry rice",
+    "uncooked rice",
+    "rice",
+    "pasta",
+    "dry pasta",
+    "string",
+    "yarn",
+    "cleaning sponge",
+    "sponge",
   ];
 
   const selectedLower = selectedMaterials.map((m) => m.toLowerCase().replace(/_/g, " "));
@@ -377,6 +406,23 @@ export function validateMaterialsAllowlist(
     });
     if (!isHouseholdBasic) {
       offending.push(rawMat);
+    }
+  }
+
+  // Scan activity full text for unselected prohibited materials introduced in instructions
+  if (activityText) {
+    const textLower = activityText.toLowerCase();
+    for (const spec of SPECIAL_SUPPLIES_PROHIBITED) {
+      const cleanSpec = spec.toLowerCase().replace(/_/g, " ");
+      const isSelected = selectedLower.some((sel) => cleanSpec.includes(sel) || sel.includes(cleanSpec));
+      if (!isSelected) {
+        const regex = new RegExp(`\\b${cleanSpec.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&")}\\b`, "i");
+        if (regex.test(textLower)) {
+          if (!offending.includes(spec)) {
+            offending.push(spec);
+          }
+        }
+      }
     }
   }
 

@@ -60,20 +60,15 @@ export default function PlannerChatPage() {
 
   // Preference state
   const [ageBand, setAgeBand] = useState<AgeBand>("4-5");
-  const [selectedInterests, setSelectedInterests] = useState<Interest[]>(["animals", "art"]);
+  const [selectedInterests, setSelectedInterests] = useState<Interest[]>([]);
   const [customInterestInput, setCustomInterestInput] = useState<string>("");
   const [customInterests, setCustomInterests] = useState<string[]>([]);
-  const [selectedGoals, setSelectedGoals] = useState<Goal[]>(["independent_play", "creativity"]);
+  const [selectedGoals, setSelectedGoals] = useState<Goal[]>([]);
   const [environment, setEnvironment] = useState<Environment>("indoors");
   const [duration, setDuration] = useState<Duration>("20-30");
   const [parentInvolvement, setParentInvolvement] = useState<ParentInvolvement>("setup_then_independent");
   const [prepTolerance, setPrepTolerance] = useState<PrepTolerance>("under_5_min");
-  const [selectedMaterials, setSelectedMaterials] = useState<Material[]>([
-    "paper",
-    "pencils_crayons",
-    "cardboard",
-    "tape",
-  ]);
+  const [selectedMaterials, setSelectedMaterials] = useState<Material[]>([]);
   const [householdOnly, setHouseholdOnly] = useState<boolean>(true);
   const [energyLevel, setEnergyLevel] = useState<EnergyLevel>("moderate");
   const [productType, setProductType] = useState<PlannerProduct>("weekly");
@@ -120,14 +115,14 @@ export default function PlannerChatPage() {
         numberOfChildren: 1,
         additionalChildAgeBands: [],
       },
-      interests: selectedInterests.length > 0 ? selectedInterests : ["art"],
+      interests: selectedInterests,
       customInterests,
-      goals: selectedGoals.length > 0 ? selectedGoals : ["independent_play"],
+      goals: selectedGoals,
       environment,
       duration,
       parentInvolvement,
       prepTolerance,
-      materials: selectedMaterials.length > 0 ? selectedMaterials : ["paper", "pencils_crayons"],
+      materials: selectedMaterials,
       householdMaterialsOnly: householdOnly,
       energyLevel,
       activitiesPerDay: 1,
@@ -153,21 +148,36 @@ export default function PlannerChatPage() {
       if (data.chunked && data.generationId) {
         const generationId: string = data.generationId;
         const totalWeeks: number = data.totalWeeks ?? 4;
+        const generationToken: string | undefined = data.generationToken;
 
         for (let week = 1; week <= totalWeeks; week++) {
           if (abort.signal.aborted) throw new Error("Generation was cancelled.");
           setMonthlyProgress(`Creating week ${week} of ${totalWeeks}…`);
 
-          const weekRes = await fetch(`/api/planner/${generationId}/week`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ weekNumber: week }),
-            signal: abort.signal,
-          });
+          let weekRes: Response | null = null;
+          let weekData: any = null;
+          let lastErr: Error | null = null;
 
-          const weekData = await weekRes.json();
-          if (!weekRes.ok) {
-            throw new Error(weekData.error || `Failed generating week ${week}`);
+          for (let attempt = 1; attempt <= 2; attempt++) {
+            try {
+              weekRes = await fetch(`/api/planner/${generationId}/week`, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                  ...(generationToken ? { "X-Generation-Token": generationToken } : {}),
+                },
+                body: JSON.stringify({ weekNumber: week }),
+                signal: abort.signal,
+              });
+              weekData = await weekRes.json();
+              if (weekRes.ok) break;
+            } catch (fetchErr) {
+              lastErr = fetchErr instanceof Error ? fetchErr : new Error("Network request failed");
+            }
+          }
+
+          if (!weekRes || !weekRes.ok) {
+            throw new Error((weekData && weekData.error) || (lastErr && lastErr.message) || `Failed generating week ${week}`);
           }
         }
 
@@ -330,9 +340,12 @@ export default function PlannerChatPage() {
           {step >= 2 && (
             <div className="chat-bubble chat-bubble-assistant animate-fade-in">
               <fieldset style={{ border: "none", padding: 0, margin: 0 }}>
-                <legend style={{ fontWeight: 600, marginBottom: "0.75rem", color: "var(--color-stone-900)", display: "block" }}>
-                  What does your child enjoy right now? Select as many as you like:
+                <legend style={{ fontWeight: 600, marginBottom: "0.25rem", color: "var(--color-stone-900)", display: "block" }}>
+                  What does your child enjoy right now?
                 </legend>
+                <span style={{ display: "block", fontSize: "0.8125rem", color: "var(--color-stone-500)", fontWeight: 400, marginBottom: "0.75rem" }}>
+                  Optional — select any that apply, or add your own
+                </span>
                 <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", marginBottom: "1rem" }}>
                   {INTERESTS.map((int) => {
                     const isSelected = selectedInterests.includes(int);
@@ -444,9 +457,12 @@ export default function PlannerChatPage() {
               )}
 
               <fieldset style={{ border: "none", padding: 0, margin: "0 0 1.25rem 0" }}>
-                <legend style={{ fontWeight: 600, marginBottom: "0.5rem", color: "var(--color-stone-900)", display: "block" }}>
+                <legend style={{ fontWeight: 600, marginBottom: "0.25rem", color: "var(--color-stone-900)", display: "block" }}>
                   What are your main goals for this week?
                 </legend>
+                <span style={{ display: "block", fontSize: "0.8125rem", color: "var(--color-stone-500)", fontWeight: 400, marginBottom: "0.75rem" }}>
+                  Optional — select any that apply
+                </span>
                 <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
                   {GOALS.map((goal) => {
                     const isSelected = selectedGoals.includes(goal);
@@ -606,9 +622,12 @@ export default function PlannerChatPage() {
           {step >= 6 && (
             <div className="chat-bubble chat-bubble-assistant animate-fade-in">
               <fieldset style={{ border: "none", padding: 0, margin: "0 0 1rem 0" }}>
-                <legend style={{ fontWeight: 600, marginBottom: "0.5rem", color: "var(--color-stone-900)", display: "block" }}>
+                <legend style={{ fontWeight: 600, marginBottom: "0.25rem", color: "var(--color-stone-900)", display: "block" }}>
                   What materials do you have readily available?
                 </legend>
+                <span style={{ display: "block", fontSize: "0.8125rem", color: "var(--color-stone-500)", fontWeight: 400, marginBottom: "0.75rem" }}>
+                  Optional — select any that apply. Common household basics are used by default
+                </span>
                 <div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
                   {MATERIALS.map((mat) => {
                     const isSelected = selectedMaterials.includes(mat);
@@ -674,7 +693,7 @@ export default function PlannerChatPage() {
                 Ready to generate your personalised activity plan!
               </p>
               <p style={{ fontSize: "0.9375rem", color: "var(--color-stone-600)", marginBottom: "1.25rem" }}>
-                We&apos;ll retrieve vetted child development research, ground each activity in proven evidence, and assemble your plan.
+                We&apos;ll match relevant child development research, ground each activity in practical developmental principles, and assemble your plan.
               </p>
 
               {/* Review Summary Card */}

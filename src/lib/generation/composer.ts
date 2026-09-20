@@ -103,8 +103,11 @@ export async function composeWeeklyPlanner(params: {
   }
 
   const materialsOverview = Array.from(allMaterials);
-  const prepWeekIn10Minutes = `Set aside a shoebox or tray with: ${materialsOverview.slice(0, 6).join(", ")}. Lay these out once on Sunday evening to enable quick, independent activity starts all week.`;
   const targetAge = preferences.ageBand || preferences.child?.ageBand || "4-5";
+  const isToddler = targetAge === "2-3";
+  const prepWeekIn10Minutes = isToddler
+    ? `Set aside a shoebox or tray with: ${materialsOverview.slice(0, 6).join(", ")}. Having these ready in advance helps you start each supervised activity quickly during the week.`
+    : `Set aside a shoebox or tray with: ${materialsOverview.slice(0, 6).join(", ")}. Lay these out once on Sunday evening to enable quick, low-friction activity starts all week.`;
   const parentInvolvement = preferences.involvement || preferences.parentInvolvement || "setup_then_independent";
   const materials = preferences.selectedMaterials || preferences.materials || [];
   const interests = [...(preferences.interests || []), ...(preferences.customInterests || [])];
@@ -247,7 +250,9 @@ export async function composeMonthlyPlanner(params: {
       optionalWeeklyThemes: weeklyThemes,
       numberOfLowSupervisionActivities: 20,
     },
-    prepThisMonth: `Consolidate everyday materials into an activity basket: ${materialsList.slice(0, 8).join(", ")}. Reusable across all 4 weeks without purchasing new craft kits.`,
+    prepThisMonth: (preferences.ageBand === "2-3" || preferences.child?.ageBand === "2-3")
+      ? `Consolidate everyday materials into an activity basket: ${materialsList.slice(0, 8).join(", ")}. Reusable across all 4 weeks to help you start each supervised activity quickly.`
+      : `Consolidate everyday materials into an activity basket: ${materialsList.slice(0, 8).join(", ")}. Reusable across all 4 weeks without purchasing new craft kits.`,
     weeks,
     globalMaterialsPool: materialsList,
   };

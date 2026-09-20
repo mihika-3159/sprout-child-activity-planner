@@ -157,7 +157,13 @@ export default function PreviewPage() {
             <h2 id="day1-heading" style={{ fontFamily: "'Outfit', sans-serif", fontSize: "1.25rem", color: "var(--color-sage-600)" }}>
               Day 1 (Full Free Preview)
             </h2>
-            <span className="evidence-badge evidence-badge-strong">Vetted Evidence</span>
+            {day1Activity.evidence?.[0]?.sourceTitle ? (
+              <span className="evidence-badge evidence-badge-strong">Research-linked</span>
+            ) : day1Activity.rationale ? (
+              <span className="evidence-badge evidence-badge-moderate">Developmental rationale</span>
+            ) : (
+              <span className="evidence-badge evidence-badge-limited">General principle</span>
+            )}
           </div>
 
           <div className="card card-elevated" style={{ padding: "2rem" }}>

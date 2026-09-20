@@ -48,9 +48,19 @@ export async function generateSingleActivity(params: {
   targetDomain?: string;
   maxAttempts?: number;
   excludeTitle?: string;
+  excludeTitles?: string[];
   excludeMechanic?: string;
+  excludeMechanics?: string[];
 }): Promise<PlannedActivity> {
-  const { sessionId, dayNumber, maxAttempts = 3, excludeTitle, excludeMechanic } = params;
+  const {
+    sessionId,
+    dayNumber,
+    maxAttempts = 3,
+    excludeTitle,
+    excludeTitles,
+    excludeMechanic,
+    excludeMechanics,
+  } = params;
   const preferences = normalizePlannerPreferences(params.preferences);
 
   // Ensure DB & evidence are initialized
@@ -129,7 +139,9 @@ export async function generateSingleActivity(params: {
         evidence: primaryEvidence,
         dayNumber,
         excludeTitle,
+        excludeTitles,
         excludeMechanic,
+        excludeMechanics,
       });
     } else {
       // 3. Construct generation prompt constrained strictly by retrieved evidence & age band
@@ -198,7 +210,9 @@ Respond with a JSON object:
           evidence: primaryEvidence,
           dayNumber,
           excludeTitle,
+          excludeTitles,
           excludeMechanic,
+          excludeMechanics,
         });
       }
     }
@@ -241,9 +255,20 @@ Respond with a JSON object:
       whyEngaging: rawActivity.whyEngaging || "Designed to ignite natural curiosity through open-ended tactile play.",
       evidence: [
         {
+          sourceId: rawActivity.evidence?.[0]?.sourceId || primaryEvidence.sourceId,
+          chunkId: rawActivity.evidence?.[0]?.chunkId || primaryEvidence.chunkId,
+          sourceTitle: rawActivity.evidence?.[0]?.sourceTitle || primaryEvidence.sourceTitle,
+          organizationAuthors: rawActivity.evidence?.[0]?.organizationAuthors || primaryEvidence.organizationAuthors,
+          publicationYear: rawActivity.evidence?.[0]?.publicationYear ?? primaryEvidence.publicationYear,
+          sourceType: rawActivity.evidence?.[0]?.sourceType || primaryEvidence.sourceType,
+          urlDoi: rawActivity.evidence?.[0]?.urlDoi || primaryEvidence.urlDoi,
+          freeAccessUrl: rawActivity.evidence?.[0]?.freeAccessUrl || primaryEvidence.freeAccessUrl,
+          relevantFindingSummary: rawActivity.evidence?.[0]?.relevantFindingSummary || primaryEvidence.chunkText.slice(0, 200),
+          activityApplicationSentence: rawActivity.evidence?.[0]?.activityApplicationSentence || `Applies developmental principles from ${primaryEvidence.sourceTitle}.`,
+          evidenceStrength: rawActivity.evidence?.[0]?.evidenceStrength || primaryEvidence.evidenceStrength,
           sourceIds: allSourceIds,
           chunkIds: allEvidenceChunkIds,
-          supportExplanation: `Grounded in ${primaryEvidence.sourceTitle} (${primaryEvidence.organizationAuthors}). Supports ${domains.join(", ")}.`,
+          supportExplanation: rawActivity.evidence?.[0]?.supportExplanation || `Grounded in ${primaryEvidence.sourceTitle} (${primaryEvidence.organizationAuthors}). Supports ${domains.join(", ")}.`,
         },
       ],
       safetyNotes: rawActivity.safetyNotes || [],
@@ -309,7 +334,9 @@ Respond with a JSON object:
     primaryEvidence,
     dayNumber,
     excludeTitle,
-    excludeMechanic
+    excludeMechanic,
+    excludeTitles,
+    excludeMechanics
   );
   const fbConcept = createConceptHash({
     domains: fallback.developmentalDomains,
@@ -329,7 +356,9 @@ function createGroundedFallbackActivity(
   evidence: RetrievedChunk,
   dayNumber: number,
   excludeTitle?: string,
-  excludeMechanic?: string
+  excludeMechanic?: string,
+  excludeTitles?: string[],
+  excludeMechanics?: string[]
 ): PlannedActivity {
   return generateAgeCalibratedActivity({
     preferences,
@@ -337,5 +366,7 @@ function createGroundedFallbackActivity(
     dayNumber,
     excludeTitle,
     excludeMechanic,
+    excludeTitles,
+    excludeMechanics,
   });
 }

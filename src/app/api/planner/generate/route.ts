@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getOrCreateSession } from "@/lib/session/anonymous";
+import { getOrCreateSession, setSessionCookie } from "@/lib/session/anonymous";
+import { signGenerationToken } from "@/lib/session/generationToken";
 import { PlannerPreferencesSchema } from "@/lib/schemas/preferences";
 import { composeWeeklyPlanner } from "@/lib/generation/composer";
 import { rateLimitMiddleware } from "@/lib/rateLimit/rateLimiter";
@@ -7,7 +8,7 @@ import { getDb } from "@/lib/db/schema";
 
 export async function POST(request: NextRequest) {
   try {
-    const { sessionId } = await getOrCreateSession();
+    const { sessionId, token } = await getOrCreateSession();
 
     // 1. Rate limiting check (bypassed in demo mode for community testers)
     const isDemo = process.env.DEMO_MODE !== "false";
@@ -63,12 +64,15 @@ export async function POST(request: NextRequest) {
         "INSERT INTO analytics_events (event_type, product_type) VALUES ('monthly_chunked_init', 'monthly')"
       ).run();
 
-      return NextResponse.json({
+      const response = NextResponse.json({
         success: true,
         generationId,
+        generationToken: signGenerationToken(generationId),
         chunked: true,
         totalWeeks: 4,
       });
+      setSessionCookie(response, token);
+      return response;
     }
 
     // 5b. Weekly: synchronous single-request compose (7 activities — fast enough)
@@ -79,11 +83,14 @@ export async function POST(request: NextRequest) {
       VALUES ('preview_generated', ?)
     `).run(preferences.productType);
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       generationId: previewResult.preview.generationId,
+      generationToken: signGenerationToken(previewResult.preview.generationId),
       preview: previewResult.preview,
     });
+    setSessionCookie(response, token);
+    return response;
   } catch (err: unknown) {
     console.error("[Planner Generate Error]:", err);
     const errorMessage = err instanceof Error ? err.message : String(err);

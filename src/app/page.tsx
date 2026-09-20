@@ -450,18 +450,17 @@ function EvidenceSection() {
               AI creates the plan.
               <br />
               <span style={{ color: "var(--color-sage-300)" }}>
-                Approved evidence constrains it.
+                Activities shaped by developmental research.
               </span>
             </h2>
             <p style={{ color: "var(--color-sage-200)", fontSize: "1rem", lineHeight: 1.7, marginBottom: "1.5rem" }}>
-              Sprout uses a retrieval-augmented approach. Before any activity is
-              suggested, the system checks an approved library of research from
-              sources like PubMed Central and educational research databases.
+              Sprout draws inspiration from peer-reviewed developmental literature and
+              research-backed frameworks, matching activities with relevant evidence sources
+              to explain why each play experience supports your child.
             </p>
             <p style={{ color: "var(--color-sage-300)", fontSize: "0.9375rem", lineHeight: 1.7 }}>
-              If the evidence doesn't support a claim, Sprout won't make it.
-              The AI's job is creative activity design — not inventing child
-              development science.
+              The goal is thoughtful, age-aware activity design grounded in established
+              childhood development principles.
             </p>
           </div>
 
@@ -475,7 +474,7 @@ function EvidenceSection() {
               },
               {
                 label: "What the evidence does",
-                items: ["Confirms developmental appropriateness", "Supports age-related recommendations", "Guides supervision requirements", "Validates safety considerations"],
+                items: ["Informs age-stage developmental goals", "Supports age-related recommendations", "Guides supervision requirements", "Provides research rationale for play designs"],
                 color: "rgba(255,255,255,0.06)",
                 border: "rgba(255,255,255,0.15)",
               },
