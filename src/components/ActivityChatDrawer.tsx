@@ -285,6 +285,9 @@ export default function ActivityChatDrawer({
               Send
             </button>
           </form>
+          <p style={{ fontSize: "0.6875rem", color: "var(--color-stone-400)", textAlign: "center", marginTop: "0.5rem", marginBottom: 0 }}>
+            Sprout Coach provides play ideas only, not medical, pediatric, or developmental diagnostic advice.
+          </p>
         </div>
       </div>
     </div>

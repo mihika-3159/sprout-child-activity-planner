@@ -53,13 +53,19 @@ export default function FullPlannerPage() {
   }, [generationId, router]);
 
   // Handle single activity regeneration
-  const handleRegenerateActivity = async (dayNumber: number, activityIndex = 0, weekNumber = 1) => {
+  const handleRegenerateActivity = async (
+    dayNumber: number,
+    activityIndex = 0,
+    weekNumber = 1,
+    currentTitle?: string,
+    currentMechanic?: string
+  ) => {
     setRegeneratingActivityId(`day-${dayNumber}-${activityIndex}`);
     try {
       const res = await fetch(`/api/planner/${generationId}/regenerate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ dayNumber, activityIndex, weekNumber }),
+        body: JSON.stringify({ dayNumber, activityIndex, weekNumber, currentTitle, currentMechanic }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -72,7 +78,7 @@ export default function FullPlannerPage() {
         const day = updated.days.find((d) => d.dayNumber === dayNumber);
         if (day) {
           day.activities[activityIndex] = data.activity;
-          setPlanner(updated);
+          setPlanner({ ...updated });
         }
       } else if (planner && "weeks" in planner) {
         const updated = { ...planner } as MonthlyPlanner;
@@ -80,11 +86,12 @@ export default function FullPlannerPage() {
         const day = week?.days.find((d) => d.dayNumber === dayNumber);
         if (day) {
           day.activities[activityIndex] = data.activity;
-          setPlanner(updated);
+          setPlanner({ ...updated });
         }
       }
     } catch (err: unknown) {
-      alert(err instanceof Error ? err.message : "Failed to regenerate activity");
+      setError(err instanceof Error ? err.message : "Failed to regenerate activity. Please try again.");
+      setTimeout(() => setError(null), 4000);
     } finally {
       setRegeneratingActivityId(null);
     }
@@ -205,7 +212,7 @@ export default function FullPlannerPage() {
         {/* Title */}
         <div style={{ marginBottom: "2rem" }}>
           <div style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem", background: "var(--color-sage-100)", color: "var(--color-sage-700)", padding: "0.25rem 0.75rem", borderRadius: "var(--radius-full)", fontSize: "0.75rem", fontWeight: 600, fontFamily: "'Outfit', sans-serif", marginBottom: "0.75rem" }}>
-            <span>FULL PLAN</span> · Age {planner.preferences.child.ageBand}
+            <span>FULL PLAN</span> · Age {planner.preferences.ageBand || planner.preferences.child?.ageBand || "4-5"}
           </div>
           <h1 style={{ fontSize: "clamp(2rem, 4vw, 2.75rem)", marginBottom: "0.5rem" }}>
             Your Personalized Activity Plan
@@ -295,12 +302,19 @@ export default function FullPlannerPage() {
                     <button
                       type="button"
                       disabled={isRegenerating}
-                      onClick={() => handleRegenerateActivity(day.dayNumber, 0)}
+                      onClick={() => handleRegenerateActivity(
+                        day.dayNumber,
+                        0,
+                        1,
+                        act.title,
+                        act.noveltySignature?.split(":")[0] || undefined
+                      )}
                       className="btn btn-ghost btn-sm"
                       style={{ fontSize: "0.8125rem", border: "1px solid var(--color-stone-200)" }}
-                      title="Regenerate this activity with a fresh concept"
+                      title="Generate a different activity for this day"
+                      id={`btn-regenerate-day-${day.dayNumber}`}
                     >
-                      {isRegenerating ? "Regenerating..." : "🔄 Regenerate"}
+                      {isRegenerating ? "Generating..." : "🔄 Try Different Activity"}
                     </button>
                     <span className="evidence-badge evidence-badge-strong">Vetted</span>
                   </div>
@@ -322,7 +336,7 @@ export default function FullPlannerPage() {
                     }}
                   >
                     <p style={{ fontSize: "0.75rem", fontWeight: 700, fontFamily: "'Outfit', sans-serif", color: "var(--color-sage-800)", marginBottom: "0.25rem" }}>
-                      ✨ Why Kids Love This:
+                      ✨ Why it may appeal:
                     </p>
                     <p style={{ fontSize: "0.875rem", color: "var(--color-stone-700)", lineHeight: 1.55 }}>
                       {act.whyEngaging.replace(/_/g, " ")}
@@ -360,15 +374,101 @@ export default function FullPlannerPage() {
                       padding: 0,
                     }}
                   >
-                    {activeEvidenceDrawer === act.id ? "Hide evidence study ↑" : "Why was this recommended? (Study details) ↓"}
+                    {activeEvidenceDrawer === act.id ? "Hide related evidence ↑" : "View related evidence details ↓"}
                   </button>
 
-                  {activeEvidenceDrawer === act.id && (
-                    <div style={{ marginTop: "0.5rem", paddingTop: "0.5rem", borderTop: "1px dashed var(--color-sage-300)", fontSize: "0.75rem", color: "var(--color-stone-600)" }}>
-                      <p style={{ fontWeight: 600, color: "var(--color-stone-800)" }}>Scientific Source Citation:</p>
-                      <p>{(act.evidence?.[0]?.supportExplanation || "Grounded in CDC & AAP evidence surveillance guidelines.").replace(/_/g, " ")}</p>
-                    </div>
-                  )}
+                  {activeEvidenceDrawer === act.id && (() => {
+                    const ev = act.evidence?.[0];
+                    const url = ev?.freeAccessUrl || ev?.urlDoi;
+                    return (
+                      <div
+                        style={{
+                          marginTop: "0.75rem",
+                          paddingTop: "0.75rem",
+                          borderTop: "1px dashed var(--color-sage-300)",
+                          fontSize: "0.75rem",
+                          color: "var(--color-stone-600)",
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: "0.5rem",
+                        }}
+                      >
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "0.5rem" }}>
+                          <div>
+                            <span style={{ fontWeight: 700, color: "var(--color-sage-800)", textTransform: "uppercase", fontSize: "0.6875rem", letterSpacing: "0.05em" }}>
+                              Related Evidence
+                            </span>
+                            {ev?.sourceTitle && (
+                              <h5 style={{ margin: "0.2rem 0 0", fontSize: "0.8125rem", fontWeight: 600, color: "var(--color-stone-900)" }}>
+                                {ev.sourceTitle}
+                              </h5>
+                            )}
+                          </div>
+                          {ev?.evidenceStrength && (
+                            <span
+                              style={{
+                                fontSize: "0.6875rem",
+                                padding: "0.15rem 0.5rem",
+                                borderRadius: "9999px",
+                                background: "var(--color-sage-100)",
+                                color: "var(--color-sage-700)",
+                                fontWeight: 600,
+                                textTransform: "capitalize",
+                                whiteSpace: "nowrap",
+                              }}
+                            >
+                              {ev.evidenceStrength} evidence
+                            </span>
+                          )}
+                        </div>
+
+                        {(ev?.organizationAuthors || ev?.publicationYear) && (
+                          <p style={{ margin: 0, color: "var(--color-stone-500)", fontSize: "0.75rem" }}>
+                            {ev.organizationAuthors}
+                            {ev.publicationYear ? ` (${ev.publicationYear})` : ""}
+                            {ev.sourceType ? ` • ${ev.sourceType}` : ""}
+                          </p>
+                        )}
+
+                        {(ev?.relevantFindingSummary || ev?.supportExplanation) && (
+                          <div style={{ background: "white", padding: "0.625rem 0.75rem", borderRadius: "var(--radius-sm)", border: "1px solid var(--color-sage-200)" }}>
+                            <span style={{ fontWeight: 600, color: "var(--color-stone-800)", display: "block", marginBottom: "0.15rem" }}>
+                              Key finding:
+                            </span>
+                            <p style={{ margin: 0, lineHeight: 1.5 }}>
+                              {ev.relevantFindingSummary || ev.supportExplanation}
+                            </p>
+                          </div>
+                        )}
+
+                        {ev?.activityApplicationSentence && (
+                          <p style={{ margin: 0, lineHeight: 1.45, fontStyle: "italic", color: "var(--color-sage-900)" }}>
+                            <strong>Activity connection:</strong> {ev.activityApplicationSentence}
+                          </p>
+                        )}
+
+                        {url && (
+                          <div style={{ marginTop: "0.25rem" }}>
+                            <a
+                              href={url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              style={{
+                                color: "var(--color-sage-700)",
+                                textDecoration: "underline",
+                                fontWeight: 600,
+                                display: "inline-flex",
+                                alignItems: "center",
+                                gap: "0.25rem",
+                              }}
+                            >
+                              <span>↗ Open access / study citation</span>
+                            </a>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
 
                 {/* Materials list */}
@@ -452,7 +552,7 @@ export default function FullPlannerPage() {
         {chatActivity && (
           <ActivityChatDrawer
             activity={chatActivity}
-            childAge={planner.preferences.child.ageBand}
+            childAge={planner.preferences.ageBand || planner.preferences.child?.ageBand || "4-5"}
             isOpen={!!chatActivity}
             onClose={() => setChatActivity(null)}
           />
