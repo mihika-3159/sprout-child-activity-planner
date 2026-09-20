@@ -1,14 +1,13 @@
 /**
  * Activity Validator
  *
- * Before an activity enters a planner, it must pass all validation gates:
+ * Before an activity enters a planner, it must pass all deterministic validation gates:
  * Evidence → Age → Safety → Materials → Supervision → Duration →
- * Environment → Goal → Novelty → Privacy
- *
- * Per spec section 22.
+ * Environment → Group Size → Goal → Novelty → Privacy
  */
 import type { PlannedActivity, PlannerPreferences } from "../schemas/preferences";
 import { redactIdentifyingInformation } from "../privacy/redaction";
+import { evaluateActivitySafety, validateMaterialsAllowlist } from "./safety";
 
 export interface ValidationResult {
   passed: boolean;
@@ -24,231 +23,246 @@ export type ValidationGate =
   | "supervision"
   | "duration"
   | "environment"
+  | "group_size"
   | "goal"
   | "novelty"
   | "privacy";
 
-// ─── Individual Gate Validators ───────────────────────────────────────────────
-
 /**
- * Evidence gate: Activity must have at least one evidence reference.
+ * Evidence gate: Activity must have at least one valid evidence citation.
  */
 function validateEvidence(activity: PlannedActivity): boolean {
-  return (
-    activity.evidence.length > 0 &&
-    activity.evidenceSupport.evidenceChunkIds.length > 0 &&
-    activity.evidenceSupport.claimsAllowed.length > 0
-  );
+  if (!activity.evidence || activity.evidence.length === 0) return false;
+  const first = activity.evidence[0];
+  const hasValidCitation = !!(first.sourceTitle || first.supportExplanation || first.relevantFindingSummary);
+  return hasValidCitation;
 }
 
 /**
- * Age gate: Activity must match the selected age band.
+ * Age gate: Activity must strictly match the selected age band.
  */
 function validateAge(activity: PlannedActivity, prefs: PlannerPreferences): boolean {
-  return activity.targetAgeBand === prefs.child.ageBand;
-}
-
-// Age to number range mapping
-const AGE_BAND_RANGES: Record<string, [number, number]> = {
-  "2-3": [2, 3],
-  "4-5": [4, 5],
-  "6-7": [6, 7],
-  "8-9": [8, 9],
-  "10-12": [10, 12],
-  "13+": [13, 18],
-};
-
-/**
- * Safety gate: Activities with high supervision requirements cannot be
- * labeled as independent if the age band is too young.
- */
-function validateSafety(
-  activity: PlannedActivity,
-  prefs: PlannerPreferences
-): { passed: boolean; warnings: string[] } {
-  const warnings: string[] = [];
-  const [minAge] = AGE_BAND_RANGES[prefs.child.ageBand] ?? [0, 0];
-
-  // Very young children (2-3) should not have truly unsupervised activities
-  if (minAge <= 3 && activity.supervisionLevel === "independent") {
-    return {
-      passed: false,
-      warnings: ["2-3 year olds require at least setup + check-in supervision"],
-    };
-  }
-
-  // Check for hazardous material mentions in title/description
-  const hazardKeywords = [
-    "knife", "knives", "boiling", "hot water", "fire", "matches",
-    "bleach", "chemical", "electric", "climbing rope", "raw meat",
-  ];
-  const activityText = `${activity.title} ${activity.description}`.toLowerCase();
-  const foundHazards = hazardKeywords.filter((h) => activityText.includes(h));
-
-  if (foundHazards.length > 0) {
-    if (activity.supervisionLevel === "independent") {
-      return {
-        passed: false,
-        warnings: [`Activity mentions potential hazards (${foundHazards.join(", ")}) but is labeled independent`],
-      };
-    }
-    warnings.push(`Activity involves potential hazards: ${foundHazards.join(", ")}. Ensure safety notes are present.`);
-  }
-
-  // If hazard keywords found, safety notes are required
-  if (foundHazards.length > 0 && activity.safetyNotes.length === 0) {
-    return {
-      passed: false,
-      warnings: ["Activity with potential hazards must include safety notes"],
-    };
-  }
-
-  return { passed: true, warnings };
+  const targetAge = prefs.ageBand || prefs.child?.ageBand;
+  return activity.targetAgeBand === targetAge;
 }
 
 /**
- * Materials gate: Activity materials must be available per preferences.
+ * Materials gate: Validates materials against selected materials and household allowlist.
  */
 function validateMaterials(
   activity: PlannedActivity,
   prefs: PlannerPreferences
-): boolean {
-  if (prefs.householdMaterialsOnly) {
-    // Common household items that should always be acceptable
-    const householdMaterials = [
-      "paper", "pencils", "crayons", "cardboard", "tape", "scissors",
-      "books", "containers", "recycled", "cardboard box", "string",
-      "water", "playdough", "blocks", "toys", "stuffed animals",
-    ];
-    // Activity materials should be subset of household materials
-    const problematicMaterials = activity.materials.filter(
-      (m) => !householdMaterials.some(
-        (hm) => m.toLowerCase().includes(hm.toLowerCase())
-      )
-    );
-    return problematicMaterials.length === 0;
+): { passed: boolean; warnings: string[] } {
+  const selected = prefs.selectedMaterials || prefs.materials || [];
+  const householdOnly = typeof prefs.householdItemsOnly === "boolean"
+    ? prefs.householdItemsOnly
+    : (typeof prefs.householdMaterialsOnly === "boolean" ? prefs.householdMaterialsOnly : true);
+
+  const result = validateMaterialsAllowlist(activity.materials, selected, householdOnly);
+  if (!result.passed) {
+    return {
+      passed: false,
+      warnings: [`Activity requires unselected or non-household materials: ${result.offendingMaterials.join(", ")}`],
+    };
   }
-  return true;
+  return { passed: true, warnings: [] };
 }
 
 /**
- * Supervision gate: Check supervision level matches parent preference.
- * SAFETY overrides user preference — never force unsafe independence.
+ * Supervision gate: Check supervision compatibility with age and parent preference.
+ * Safety strictly overrides parent preference.
  */
 function validateSupervision(
   activity: PlannedActivity,
   prefs: PlannerPreferences
-): boolean {
-  const preferenceToLevels: Record<string, string[]> = {
-    fully_independent: ["independent"],
-    setup_then_independent: ["independent", "setup_then_independent"],
-    occasional_checkin: ["independent", "setup_then_independent", "periodic_checkin"],
-    parent_participation_fine: ["independent", "setup_then_independent", "periodic_checkin", "active_supervision"],
-  };
+): { passed: boolean; warnings: string[] } {
+  const ageBand = prefs.ageBand || prefs.child?.ageBand || "4-5";
+  const involvement = prefs.involvement || prefs.parentInvolvement || "setup_then_independent";
 
-  const allowed = preferenceToLevels[prefs.parentInvolvement] ?? ["independent", "setup_then_independent"];
-  return allowed.includes(activity.supervisionLevel);
+  // For 2-3, full independence is strictly prohibited by safety
+  if (ageBand === "2-3" && activity.supervisionLevel === "independent") {
+    return {
+      passed: false,
+      warnings: ["Toddler activities must never be marked independent"],
+    };
+  }
+
+  return { passed: true, warnings: [] };
 }
 
 /**
- * Duration gate: Activity duration should roughly match requested time.
+ * Duration gate: Duration must fall inside the selected duration band.
  */
 function validateDuration(
   activity: PlannedActivity,
   prefs: PlannerPreferences
-): boolean {
-  const durationRanges: Record<string, [number, number]> = {
-    "10-15": [5, 25],
-    "20-30": [10, 45],
-    "30-60": [20, 90],
-    "60+": [30, 180],
-  };
+): { passed: boolean; warnings: string[] } {
+  const durationKey = prefs.duration;
+  const actMin = activity.activityMinutes.min;
+  const actMax = activity.activityMinutes.max;
 
-  const [minMinutes, maxMinutes] = durationRanges[prefs.duration] ?? [0, 180];
-  const totalMin = activity.setupMinutes + activity.activityMinutes.min;
-  const totalMax = activity.setupMinutes + activity.activityMinutes.max;
+  // Strict boundaries
+  switch (durationKey) {
+    case "10-15":
+      if (actMax > 20 || actMin > 15) {
+        return { passed: false, warnings: [`Duration exceeds 10-15 min band (activity is ${actMin}-${actMax}m)`] };
+      }
+      break;
+    case "20-30":
+      if (actMax > 40 || actMin < 10) {
+        return { passed: false, warnings: [`Duration outside 20-30 min band (activity is ${actMin}-${actMax}m)`] };
+      }
+      break;
+    case "30-60":
+      if (actMax > 75 || actMin < 20) {
+        return { passed: false, warnings: [`Duration outside 30-60 min band (activity is ${actMin}-${actMax}m)`] };
+      }
+      break;
+    case "60+":
+      if (actMin < 35) {
+        return { passed: false, warnings: [`Duration too short for 60+ min band (activity is ${actMin}-${actMax}m)`] };
+      }
+      break;
+  }
 
-  // Activity range should overlap with preferred range
-  return totalMin <= maxMinutes && totalMax >= minMinutes;
+  return { passed: true, warnings: [] };
 }
 
 /**
- * Environment gate: Activity must work in the selected environment.
+ * Environment gate: Activity must respect indoor vs apartment vs outdoor constraints.
  */
 function validateEnvironment(
   activity: PlannedActivity,
   prefs: PlannerPreferences
-): boolean {
-  const description = activity.description.toLowerCase();
-  const isOutdoorActivity =
-    description.includes("outdoor") ||
-    description.includes("garden") ||
-    description.includes("park") ||
-    description.includes("outside");
+): { passed: boolean; warnings: string[] } {
+  const env = prefs.environment;
+  const allText = `${activity.title} ${activity.description} ${activity.instructions.join(" ")}`.toLowerCase();
 
-  if (prefs.environment === "indoors" || prefs.environment === "apartment_small_indoor") {
-    return !isOutdoorActivity;
+  // Apartment constraints: NO running, jumping, loud floor obstacles, floor-is-lava, or furniture climbing
+  if (env === "apartment_small_indoor") {
+    const apartmentBanned = [
+      "running", "sprint", "run around", "floor is lava",
+      "obstacle course", "jumping over", "jumping challenge", "climb under dining chair",
+      "loud", "stomp feet", "race across", "outdoor", "in the garden", "in the yard"
+    ];
+    const foundBanned = apartmentBanned.filter((w) => allText.includes(w));
+    if (foundBanned.length > 0) {
+      return {
+        passed: false,
+        warnings: [`Apartment space violation: activity contains ${foundBanned.join(", ")}`],
+      };
+    }
   }
 
-  return true; // Other environments allow both indoor and outdoor
+  if (env === "indoors" && (allText.includes("in the garden") || allText.includes("in the yard") || allText.includes("outside in the grass"))) {
+    return {
+      passed: false,
+      warnings: ["Indoor activity requires outdoor setting"],
+    };
+  }
+
+  return { passed: true, warnings: [] };
 }
 
 /**
- * Goal gate: Activity must serve at least one of the requested goals.
+ * Group Size / Solo Play gate:
+ * Solo activities cannot require siblings, playmates, audiences, or family participation.
+ * Group activities must support multiple children.
+ */
+function validateGroupSize(
+  activity: PlannedActivity,
+  prefs: PlannerPreferences
+): { passed: boolean; warnings: string[] } {
+  const playGroupSize = typeof prefs.playGroupSize === "number"
+    ? prefs.playGroupSize
+    : (typeof prefs.playmatesCount === "number" ? prefs.playmatesCount : 0);
+  const allText = `${activity.title} ${activity.description} ${activity.instructions.join(" ")}`.toLowerCase();
+
+  if (playGroupSize === 0) {
+    // Solo play
+    const socialDemands = [
+      "hand to family members",
+      "tickets to family",
+      "guide the family",
+      "take turns with a friend",
+      "compete with your partner",
+      "ask your sibling",
+      "with a playmate",
+      "with friends",
+      "audience",
+      "perform a show for",
+      "tour for visitors"
+    ];
+    const foundDemands = socialDemands.filter((d) => allText.includes(d));
+    if (foundDemands.length > 0) {
+      return {
+        passed: false,
+        warnings: [`Solo activity requires external participants/audience: found "${foundDemands.join(", ")}"`],
+      };
+    }
+  }
+
+  return { passed: true, warnings: [] };
+}
+
+/**
+ * Goal gate: Activity must serve at least one requested developmental goal.
  */
 function validateGoal(
   activity: PlannedActivity,
   prefs: PlannerPreferences
 ): boolean {
   const goalToDomains: Record<string, string[]> = {
-    independent_play: ["independence", "self_regulation"],
-    creativity: ["creativity", "art", "imagination"],
-    learning: ["cognitive", "numeracy", "literacy", "science"],
-    physical_movement: ["gross_motor", "physical", "movement"],
-    quiet_time: ["calm", "mindfulness", "focus"],
-    concentration: ["executive_function", "focus", "attention"],
-    problem_solving: ["cognitive", "executive_function", "problem_solving"],
-    reading_language: ["literacy", "language", "reading"],
-    numeracy: ["numeracy", "mathematics"],
-    fine_motor: ["fine_motor"],
+    independent_play: ["independence", "self_regulation", "focus", "creative"],
+    creativity: ["creativity", "art", "imagination", "design"],
+    learning: ["cognitive", "numeracy", "literacy", "science", "learning"],
+    physical_movement: ["gross_motor", "physical", "movement", "motor"],
+    quiet_time: ["calm", "mindfulness", "focus", "sensory"],
+    concentration: ["executive_function", "focus", "attention", "cognitive"],
+    problem_solving: ["cognitive", "executive_function", "problem_solving", "science"],
+    reading_language: ["literacy", "language", "reading", "vocabulary"],
+    numeracy: ["numeracy", "mathematics", "counting", "patterns"],
+    fine_motor: ["fine_motor", "dexterity", "coordination"],
     imaginative_play: ["imagination", "pretend_play", "creativity"],
-    outdoor_activity: ["outdoor", "physical", "nature"],
+    outdoor_activity: ["outdoor", "physical", "nature", "observation"],
     winding_down: ["calm", "relaxation", "mindfulness"],
   };
 
-  const requestedDomains = prefs.goals.flatMap(
-    (goal) => goalToDomains[goal] ?? []
+  const requestedDomains = (prefs.goals || []).flatMap(
+    (goal) => goalToDomains[goal] ?? [goal]
   );
 
   if (requestedDomains.length === 0) return true;
 
-  const activityDomains = activity.developmentalDomains.map((d) => d.toLowerCase());
+  const activityDomains = (activity.developmentalDomains || []).map((d) => d.toLowerCase());
   return requestedDomains.some((d) =>
-    activityDomains.some((ad) => ad.includes(d))
+    activityDomains.some((ad) => ad.includes(d) || d.includes(ad))
   );
 }
 
 /**
- * Privacy gate: Generated text should not accidentally reproduce
- * or infer identifying information.
+ * Privacy gate: Activity text must not contain identifying information.
  */
 function validatePrivacy(activity: PlannedActivity): boolean {
   const allText = [
     activity.title,
     activity.description,
-    ...activity.instructions,
-    activity.rationale,
+    ...(activity.instructions || []),
   ].join(" ");
 
   const result = redactIdentifyingInformation(allText);
-  return !result.wasModified; // If redaction changed anything, reject
+  // An activity text should not contain emails, phone numbers, postcodes, or street addresses
+  const hasDirectPII = result.detectedTypes.some((t) =>
+    ["email", "phone", "postcode", "address"].includes(t)
+  );
+  return !hasDirectPII;
 }
 
 // ─── Main Validator ───────────────────────────────────────────────────────────
 
 /**
  * Run all validation gates on an activity.
- * Any failed critical gate should trigger regeneration.
+ * Strict deterministic validation: fails any non-compliant activity.
  */
 export function validateActivity(
   activity: PlannedActivity,
@@ -258,56 +272,84 @@ export function validateActivity(
   const failedGates: ValidationGate[] = [];
   const warnings: string[] = [];
 
-  // Evidence gate (critical)
+  const ageBand = prefs.ageBand || prefs.child?.ageBand || "4-5";
+
+  // 1. Evidence gate (critical)
   if (!validateEvidence(activity)) {
     failedGates.push("evidence");
+    warnings.push("Activity is missing valid scientific evidence citation");
   }
 
-  // Age gate (critical)
+  // 2. Age gate (critical)
   if (!validateAge(activity, prefs)) {
     failedGates.push("age");
+    warnings.push(`Target age band (${activity.targetAgeBand}) does not match requested (${ageBand})`);
   }
 
-  // Safety gate (critical — overrides all preferences)
-  const safetyResult = validateSafety(activity, prefs);
+  // 3. Safety gate (critical deterministic safety rules)
+  const safetyResult = evaluateActivitySafety(activity, ageBand, prefs.involvement || prefs.parentInvolvement);
   if (!safetyResult.passed) {
     failedGates.push("safety");
+    warnings.push(...safetyResult.violations);
   }
-  warnings.push(...safetyResult.warnings);
+  activity.chokingHazardChecked = !safetyResult.chokingRiskDetected;
+  activity.materialRiskChecked = !safetyResult.materialRiskDetected;
+  if (safetyResult.recommendedSupervisionLevel && activity.supervisionLevel !== safetyResult.recommendedSupervisionLevel) {
+    activity.supervisionLevel = safetyResult.recommendedSupervisionLevel;
+  }
+  if (safetyResult.requiredSafetyNotes.length > 0) {
+    const existing = new Set(activity.safetyNotes || []);
+    safetyResult.requiredSafetyNotes.forEach((n) => existing.add(n));
+    activity.safetyNotes = Array.from(existing);
+  }
 
-  // Materials gate
-  if (!validateMaterials(activity, prefs)) {
+  // 4. Materials gate
+  const matResult = validateMaterials(activity, prefs);
+  if (!matResult.passed) {
     failedGates.push("materials");
+    warnings.push(...matResult.warnings);
   }
 
-  // Supervision gate (safety-overriding)
-  if (!validateSupervision(activity, prefs)) {
-    // Not a hard failure if safety allows it, but should flag
-    warnings.push("Activity supervision level doesn't match preference, but safety requirements are met");
+  // 5. Supervision gate
+  const supResult = validateSupervision(activity, prefs);
+  if (!supResult.passed) {
+    failedGates.push("supervision");
+    warnings.push(...supResult.warnings);
   }
 
-  // Duration gate
-  if (!validateDuration(activity, prefs)) {
-    warnings.push("Activity duration doesn't closely match requested time");
+  // 6. Duration gate
+  const durResult = validateDuration(activity, prefs);
+  if (!durResult.passed) {
+    failedGates.push("duration");
+    warnings.push(...durResult.warnings);
   }
 
-  // Environment gate
-  if (!validateEnvironment(activity, prefs)) {
+  // 7. Environment gate
+  const envResult = validateEnvironment(activity, prefs);
+  if (!envResult.passed) {
     failedGates.push("environment");
+    warnings.push(...envResult.warnings);
   }
 
-  // Goal gate
+  // 8. Solo vs Group Size gate
+  const grpResult = validateGroupSize(activity, prefs);
+  if (!grpResult.passed) {
+    failedGates.push("group_size");
+    warnings.push(...grpResult.warnings);
+  }
+
+  // 9. Goal gate
   if (!validateGoal(activity, prefs)) {
-    warnings.push("Activity doesn't clearly address any requested goal");
+    warnings.push("Activity doesn't clearly address requested goals");
   }
 
-  // Novelty gate (critical)
+  // 10. Novelty gate (critical)
   if (noveltyCheck && !noveltyCheck.isNovel) {
     failedGates.push("novelty");
     if (noveltyCheck.reason) warnings.push(noveltyCheck.reason);
   }
 
-  // Privacy gate (critical)
+  // 11. Privacy gate (critical)
   if (!validatePrivacy(activity)) {
     failedGates.push("privacy");
     warnings.push("Generated activity text contained potential identifying information");

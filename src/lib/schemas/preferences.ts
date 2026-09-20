@@ -105,61 +105,91 @@ export type PlannerProduct = (typeof PLANNER_PRODUCTS)[number];
 
 export const ChildProfileSchema = z.object({
   ageBand: z.enum(AGE_BANDS),
-  // Number of children — no names
   numberOfChildren: z.union([z.literal(1), z.literal(2), z.literal(3)]).default(1),
-  // If multiple children, their age bands (no names)
   additionalChildAgeBands: z.array(z.enum(AGE_BANDS)).max(5).default([]),
 });
 
 export type ChildProfile = z.infer<typeof ChildProfileSchema>;
 
-// ─── Planner Preferences ─────────────────────────────────────────────────────
+// ─── Canonical Planner Preferences (Single Source of Truth) ──────────────────
 
 export const PlannerPreferencesSchema = z.object({
-  // Child
-  child: ChildProfileSchema,
-
-  // What the child enjoys (structured selection, no names)
-  interests: z.array(z.enum(INTERESTS)).min(1).max(8),
+  // Canonical 11 Fields
+  ageBand: z.enum(AGE_BANDS).optional(),
+  interests: z.array(z.string()).default([]),
   customInterests: z
     .array(z.string().max(50).trim())
-    .max(3)
-    .default([])
-    .describe("Non-identifying custom interests"),
+    .max(5)
+    .default([]),
+  goals: z.array(z.string()).default(["independent_play"]),
+  involvement: z.enum(PARENT_INVOLVEMENTS).optional(),
+  playGroupSize: z.number().int().min(0).max(10).default(0).optional(),
+  environment: z.enum(ENVIRONMENTS).default("indoors"),
+  duration: z.enum(DURATIONS).default("20-30"),
+  selectedMaterials: z.array(z.string()).default([]).optional(),
+  householdItemsOnly: z.boolean().default(true).optional(),
+  planLength: z.enum(["weekly", "monthly"]).default("weekly").optional(),
 
-  // Parent goals
-  goals: z.array(z.enum(GOALS)).min(1).max(5),
-
-  // Environment
-  environment: z.enum(ENVIRONMENTS),
-
-  // Time available
-  duration: z.enum(DURATIONS),
-
-  // How involved the parent wants to be
-  parentInvolvement: z.enum(PARENT_INVOLVEMENTS),
-
-  // Preparation tolerance
-  prepTolerance: z.enum(PREP_TOLERANCES),
-
-  // Available materials
-  materials: z.array(z.enum(MATERIALS)),
-  householdMaterialsOnly: z.boolean().default(false),
-
-  // Activity energy
-  energyLevel: z.enum(ENERGY_LEVELS),
-
-  // Planner structure
-  activitiesPerDay: z.union([z.literal(1), z.literal(2), z.literal(3)]).default(1),
-
-  // Which product
-  productType: z.enum(PLANNER_PRODUCTS),
-
-  // How many other children can play with the child (0 = solo play)
-  playmatesCount: z.number().int().min(0).max(10).optional().default(0),
+  // Legacy & helper fields for seamless compatibility across existing services
+  child: ChildProfileSchema.optional(),
+  parentInvolvement: z.enum(PARENT_INVOLVEMENTS).optional(),
+  playmatesCount: z.number().int().min(0).max(10).optional(),
+  materials: z.array(z.string()).optional(),
+  householdMaterialsOnly: z.boolean().optional(),
+  productType: z.enum(["weekly", "monthly", "yearly"]).optional(),
+  prepTolerance: z.enum(PREP_TOLERANCES).optional().default("under_5_min"),
+  energyLevel: z.enum(ENERGY_LEVELS).optional().default("moderate"),
+  activitiesPerDay: z.union([z.literal(1), z.literal(2), z.literal(3)]).optional().default(1),
 });
 
 export type PlannerPreferences = z.infer<typeof PlannerPreferencesSchema>;
+
+/**
+ * Normalizes any input preferences into the canonical 11-field PlannerPreferences object
+ * while populating both canonical and legacy aliases for total backward compatibility.
+ */
+export function normalizePlannerPreferences(raw: any): PlannerPreferences {
+  const ageBand: AgeBand = raw.ageBand || raw.child?.ageBand || "4-5";
+  const interests: string[] = Array.isArray(raw.interests) ? raw.interests : [];
+  const customInterests: string[] = Array.isArray(raw.customInterests) ? raw.customInterests : [];
+  const goals: string[] = Array.isArray(raw.goals) && raw.goals.length > 0 ? raw.goals : ["independent_play"];
+  const involvement: ParentInvolvement = raw.involvement || raw.parentInvolvement || "setup_then_independent";
+  const playGroupSize: number = typeof raw.playGroupSize === "number" ? raw.playGroupSize : (typeof raw.playmatesCount === "number" ? raw.playmatesCount : 0);
+  const environment: Environment = raw.environment || "indoors";
+  const duration: Duration = raw.duration || "20-30";
+  const selectedMaterials: string[] = Array.isArray(raw.selectedMaterials) ? raw.selectedMaterials : (Array.isArray(raw.materials) ? raw.materials : []);
+  const householdItemsOnly: boolean = typeof raw.householdItemsOnly === "boolean" ? raw.householdItemsOnly : (typeof raw.householdMaterialsOnly === "boolean" ? raw.householdMaterialsOnly : true);
+  const planLength = raw.planLength === "monthly" || raw.productType === "monthly" ? "monthly" : "weekly";
+
+  return {
+    ageBand,
+    interests,
+    customInterests,
+    goals,
+    involvement,
+    playGroupSize,
+    environment,
+    duration,
+    selectedMaterials,
+    householdItemsOnly,
+    planLength,
+
+    // Aliases
+    child: {
+      ageBand,
+      numberOfChildren: (playGroupSize > 0 ? 2 : 1) as 1 | 2 | 3,
+      additionalChildAgeBands: [],
+    },
+    parentInvolvement: involvement,
+    playmatesCount: playGroupSize,
+    materials: selectedMaterials as Material[],
+    householdMaterialsOnly: householdItemsOnly,
+    productType: planLength as PlannerProduct,
+    prepTolerance: raw.prepTolerance || "under_5_min",
+    energyLevel: raw.energyLevel || "moderate",
+    activitiesPerDay: raw.activitiesPerDay || 1,
+  };
+}
 
 // ─── Supervision Level ────────────────────────────────────────────────────────
 
@@ -173,44 +203,64 @@ export type SupervisionLevel = (typeof SUPERVISION_LEVELS)[number];
 
 // ─── Planned Activity ─────────────────────────────────────────────────────────
 
+export const ActivityEvidenceItemSchema = z.object({
+  sourceId: z.string().optional(),
+  chunkId: z.string().optional(),
+  sourceTitle: z.string().optional(),
+  organizationAuthors: z.string().optional(),
+  publicationYear: z.number().int().nullable().optional(),
+  sourceType: z.string().optional(),
+  urlDoi: z.string().optional(),
+  freeAccessUrl: z.string().optional(),
+  relevantFindingSummary: z.string().optional(),
+  activityApplicationSentence: z.string().optional(),
+  evidenceStrength: z.enum(["strong", "moderate", "limited"]).optional(),
+  supportExplanation: z.string().optional(),
+  sourceIds: z.array(z.string()).optional(),
+  chunkIds: z.array(z.string()).optional(),
+});
+
+export type ActivityEvidenceItem = z.infer<typeof ActivityEvidenceItemSchema>;
+
 export const PlannedActivitySchema = z.object({
   id: z.string().uuid(),
-  title: z.string().min(3).max(80),
+  title: z.string().min(3).max(120),
   targetAgeBand: z.enum(AGE_BANDS),
-  description: z.string().min(20).max(500),
+  description: z.string().min(20).max(800),
   instructions: z.array(z.string()).min(1).max(10),
-  materials: z.array(z.string()).max(12),
+  materials: z.array(z.string()).max(15),
   setupMinutes: z.number().int().min(0).max(60),
   activityMinutes: z.object({
     min: z.number().int().min(1),
-    max: z.number().int().min(1),
+    max: z.number().int().min(180),
   }),
   supervisionLevel: z.enum(SUPERVISION_LEVELS),
   parentSetup: z.array(z.string()).max(6),
-  developmentalDomains: z.array(z.string()).min(1).max(5),
-  rationale: z.string().min(20).max(600),
-  whyEngaging: z.string().max(600).optional(),
-  evidence: z.array(
-    z.object({
-      sourceIds: z.array(z.string()),
-      chunkIds: z.array(z.string()),
-      supportExplanation: z.string().max(400),
-    })
-  ),
-  safetyNotes: z.array(z.string()).max(5),
-  easyVariation: z.string().max(300),
-  extension: z.string().max(300),
+  developmentalDomains: z.array(z.string()).min(1).max(6),
+  rationale: z.string().min(20).max(800),
+  whyEngaging: z.string().max(800).optional(),
+  evidence: z.array(ActivityEvidenceItemSchema),
+  safetyNotes: z.array(z.string()).max(6),
+  easyVariation: z.string().max(400),
+  extension: z.string().max(400),
   noveltySignature: z.string(),
+  chokingHazardChecked: z.boolean().default(true).optional(),
+  materialRiskChecked: z.boolean().default(true).optional(),
+  isContinuingProject: z.boolean().default(false).optional(),
   // Evidence support object (internal)
   evidenceSupport: z.object({
     evidenceChunkIds: z.array(z.string()),
     supportedDomains: z.array(z.string()),
     evidenceStrength: z.enum(["strong", "moderate", "limited"]).optional(),
     claimsAllowed: z.array(z.string()),
-  }),
+  }).optional(),
 });
 
 export type PlannedActivity = z.infer<typeof PlannedActivitySchema>;
+
+// Alias for requirement "Create a structured Activity schema"
+export const ActivitySchema = PlannedActivitySchema;
+export type Activity = PlannedActivity;
 
 // ─── Planner Outputs ─────────────────────────────────────────────────────────
 
