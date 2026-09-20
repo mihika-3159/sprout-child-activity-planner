@@ -52,7 +52,7 @@ export async function GET(
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Sprout Activity Planner - Age ${planner.preferences.child.ageBand}</title>
+  <title>Sprout Activity Planner - Age ${planner.preferences.ageBand || planner.preferences.child?.ageBand || "4-5"}</title>
   <style>
     @page {
       size: A4 portrait;
@@ -114,6 +114,7 @@ export async function GET(
       padding: 1rem;
       margin-bottom: 1.25rem;
       page-break-inside: avoid;
+      break-inside: avoid;
     }
     .day-header {
       display: flex;
@@ -185,7 +186,7 @@ export async function GET(
       <div class="title">Personalised Screen-Free Activity Plan</div>
     </div>
     <div class="meta" style="text-align: right;">
-      <div>Age Band: <strong>${planner.preferences.child.ageBand}</strong></div>
+      <div>Age Band: <strong>${planner.preferences.ageBand || planner.preferences.child?.ageBand || "4-5"}</strong></div>
       <div>Environment: ${formatEnvironment(planner.preferences.environment)}</div>
     </div>
   </div>
@@ -205,10 +206,12 @@ export async function GET(
       <div class="day-header">
         <div class="day-title">
           <span class="checkbox-box"></span>
-          Day ${d.dayNumber}: ${d.activities[0].title.replace(/_/g, " ")}
+          Day ${d.dayNumber}: ${d.activities[0].title
+            .replace(/^Day\s*\d+[:\s-]+/i, "")
+            .replace(/_/g, " ")}
         </div>
         <div style="font-size: 0.75rem; color: #666;">
-          Setup: ~${d.activities[0].setupMinutes}m | Act: ${d.activities[0].activityMinutes.min}-${d.activities[0].activityMinutes.max}m | ${formatSupervision(d.activities[0].supervisionLevel)}
+          Setup: ~${d.activities[0].setupMinutes}m &nbsp;|&nbsp; Activity time: ${d.activities[0].activityMinutes.min}–${d.activities[0].activityMinutes.max}m &nbsp;|&nbsp; ${formatSupervision(d.activities[0].supervisionLevel)}
         </div>
       </div>
       <p style="font-size: 0.88rem; margin: 0.25rem 0 0.5rem;">${d.activities[0].description.replace(/_/g, " ")}</p>
@@ -222,8 +225,15 @@ export async function GET(
         <strong>Materials:</strong> ${d.activities[0].materials.map((m) => formatMaterial(m)).join(", ")}
       </div>
 
+      ${d.activities[0].safetyNotes && d.activities[0].safetyNotes.length > 0
+        ? `<div style="background: #fff8e7; border-left: 3px solid #d97706; padding: 0.35rem 0.6rem; font-size: 0.78rem; color: #78350f; margin-bottom: 0.35rem; border-radius: 3px;">
+            <strong>⚠ Safety:</strong> ${d.activities[0].safetyNotes.join(" · ")}
+           </div>`
+        : ""
+      }
+
       <div style="background: #fdfbf7; border-left: 3px solid #6b8e23; padding: 0.4rem 0.6rem; font-size: 0.8rem; color: #374151; margin-bottom: 0.35rem; border-radius: 3px;">
-        <strong>Why Kids Love This:</strong> ${d.activities[0].whyEngaging ? d.activities[0].whyEngaging.replace(/_/g, " ") : "Designed to spark hands-on curiosity and creative play."}
+        <strong>Why it may appeal:</strong> ${d.activities[0].whyEngaging ? d.activities[0].whyEngaging.replace(/_/g, " ") : "Designed to spark hands-on curiosity and creative play."}
       </div>
 
       <div class="rationale">
