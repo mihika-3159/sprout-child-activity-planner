@@ -1,7 +1,7 @@
 import { ensureEvidenceSeeded } from "../lib/evidence/seed";
 import { getDb } from "../lib/db/schema";
 import { composeWeeklyPlanner } from "../lib/generation/composer";
-import { PlannerPreferences } from "../lib/schemas/preferences";
+import { PlannerPreferences, AgeBand } from "../lib/schemas/preferences";
 import { humanize, MATERIAL_LABELS, GOAL_LABELS, SUPERVISION_LABELS } from "../lib/utils/formatters";
 
 async function runAccuracyAudit() {
@@ -66,7 +66,7 @@ async function runAccuracyAudit() {
 
   // 3. Multi-Age Band & Solo Play Generation Check
   console.log("\n[3/7] Testing Activity Generation Across Multiple Age Bands & Playmate Counts...");
-  const ageBandsToTest: Array<{ age: PlannerPreferences["child"]["ageBand"]; playmates: number; mode: string }> = [
+  const ageBandsToTest: Array<{ age: AgeBand; playmates: number; mode: string }> = [
     { age: "2-3", playmates: 0, mode: "solo" },
     { age: "6-7", playmates: 1, mode: "paired" },
     { age: "10-12", playmates: 3, mode: "group" },
