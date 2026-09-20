@@ -104,7 +104,11 @@ export async function composeWeeklyPlanner(params: {
 
   const materialsOverview = Array.from(allMaterials);
   const prepWeekIn10Minutes = `Set aside a shoebox or tray with: ${materialsOverview.slice(0, 6).join(", ")}. Lay these out once on Sunday evening to enable quick, independent activity starts all week.`;
-  const evidenceSummary = `All 7 days are grounded in peer-reviewed child development research from the CDC, AAP, and PMC Open Access, tailored for age band ${preferences.child.ageBand}.`;
+  const targetAge = preferences.ageBand || preferences.child?.ageBand || "4-5";
+  const parentInvolvement = preferences.involvement || preferences.parentInvolvement || "setup_then_independent";
+  const materials = preferences.selectedMaterials || preferences.materials || [];
+  const interests = [...(preferences.interests || []), ...(preferences.customInterests || [])];
+  const evidenceSummary = `Curated activities informed by developmental guidelines from the CDC, AAP, and PMC Open Access, calibrated for age band ${targetAge}.`;
 
   const fullPlanner: WeeklyPlanner = {
     id: generationId,
@@ -124,15 +128,15 @@ export async function composeWeeklyPlanner(params: {
   const preview: PlannerPreviewPayload = {
     generationId,
     productType: "weekly",
-    targetAgeBand: preferences.child.ageBand,
+    targetAgeBand: targetAge,
     preferencesSummary: {
-      ageBand: preferences.child.ageBand,
-      interests: [...preferences.interests, ...preferences.customInterests],
-      goals: preferences.goals,
-      environment: preferences.environment,
-      duration: preferences.duration,
-      parentInvolvement: preferences.parentInvolvement,
-      materials: preferences.materials,
+      ageBand: targetAge,
+      interests,
+      goals: preferences.goals || [],
+      environment: preferences.environment || "indoors",
+      duration: preferences.duration || "20-30",
+      parentInvolvement,
+      materials,
     },
     day1Activity: day1,
     day2Teaser: {
@@ -190,17 +194,26 @@ export async function composeMonthlyPlanner(params: {
   ];
 
   for (let weekNum = 1; weekNum <= 4; weekNum++) {
-    const weekDays: Array<{ dayNumber: number; activities: PlannedActivity[] }> = [];
     const theme = weeklyThemes[weekNum - 1];
+    const dayIndices = [1, 2, 3, 4, 5, 6, 7];
 
-    for (let dayNum = 1; dayNum <= 7; dayNum++) {
-      const act = await generateSingleActivity({
-        sessionId,
-        preferences,
-        dayNumber: (weekNum - 1) * 7 + dayNum,
-        targetDomain: theme,
-      });
+    // Generate all 7 days for the current week concurrently
+    const weekActivities = await Promise.all(
+      dayIndices.map((dayNum) =>
+        generateSingleActivity({
+          sessionId,
+          preferences,
+          dayNumber: (weekNum - 1) * 7 + dayNum,
+          targetDomain: theme,
+        })
+      )
+    );
 
+    const weekDays: Array<{ dayNumber: number; activities: PlannedActivity[] }> = [];
+
+    for (let i = 0; i < weekActivities.length; i++) {
+      const act = weekActivities[i];
+      const dayNum = i + 1;
       act.materials.forEach((m) => globalMaterials.add(m));
       weekDays.push({ dayNumber: dayNum, activities: [act] });
 
@@ -242,18 +255,23 @@ export async function composeMonthlyPlanner(params: {
   const day1 = weeks[0].days[0].activities[0];
   const day2 = weeks[0].days[1].activities[0];
 
+  const targetAge = preferences.ageBand || preferences.child?.ageBand || "4-5";
+  const parentInvolvement = preferences.involvement || preferences.parentInvolvement || "setup_then_independent";
+  const materials = preferences.selectedMaterials || preferences.materials || [];
+  const interests = [...(preferences.interests || []), ...(preferences.customInterests || [])];
+
   const preview: PlannerPreviewPayload = {
     generationId,
     productType: "monthly",
-    targetAgeBand: preferences.child.ageBand,
+    targetAgeBand: targetAge,
     preferencesSummary: {
-      ageBand: preferences.child.ageBand,
-      interests: [...preferences.interests, ...preferences.customInterests],
-      goals: preferences.goals,
-      environment: preferences.environment,
-      duration: preferences.duration,
-      parentInvolvement: preferences.parentInvolvement,
-      materials: preferences.materials,
+      ageBand: targetAge,
+      interests,
+      goals: preferences.goals || [],
+      environment: preferences.environment || "indoors",
+      duration: preferences.duration || "20-30",
+      parentInvolvement,
+      materials,
     },
     day1Activity: day1,
     day2Teaser: {
