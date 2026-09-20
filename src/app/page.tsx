@@ -228,7 +228,7 @@ function HowItWorks() {
       icon: "⬇️",
       title: "Download when you're happy",
       description:
-        "Get a printable PDF or clean HTML version of your weekly, monthly, or yearly plan, ready to use.",
+        "Get a printable PDF or clean HTML version of your weekly or monthly plan, ready to use.",
     },
   ];
 
@@ -342,7 +342,7 @@ function WhyParents() {
     {
       icon: "📖",
       title: "Evidence-grounded",
-      desc: "Every suggestion comes from an approved evidence base, not AI imagination or parenting blogs.",
+      desc: "Suggestions are grounded in peer-reviewed developmental research, not AI imagination or parenting blogs — though no activity catalogue is exhaustive.",
     },
   ];
 
@@ -803,7 +803,7 @@ function Pricing() {
       features: [
         "7 personalised days",
         "1–3 activities per day",
-        "Evidence citations per activity",
+        "Related evidence per activity",
         "Printable PDF",
         "Regenerate any activity",
         "Materials overview",
@@ -823,20 +823,8 @@ function Pricing() {
       ],
       highlight: true,
     },
-    {
-      key: "yearly" as const,
-      icon: "📋",
-      features: [
-        "Full 12-month plan",
-        "Monthly themes",
-        "Long-term variety",
-        "Materials to keep around",
-        "Hierarchical structure",
-        "Everything in Monthly",
-      ],
-      highlight: false,
-    },
   ];
+
 
   return (
     <section
@@ -864,7 +852,9 @@ function Pricing() {
             margin: "0 auto",
           }}
         >
-          {products.map((product) => {
+          {products
+            .filter((p) => PLANNER_PRODUCTS[p.key].enabled)
+            .map((product) => {
             const config = PLANNER_PRODUCTS[product.key];
             return (
               <div

@@ -54,7 +54,8 @@ export const PLANNER_PRODUCTS: Record<PlannerProduct, ProductConfig> = {
     id: "yearly",
     name: "Year Planner",
     description: "A comprehensive 12-month plan with themes, variety, and long-term progression",
-    enabled: true,
+    // disabled — not yet built; will be re-enabled in a future release
+    enabled: false,
     priceInPence: parsePriceFromEnv("PRODUCT_PRICE_YEARLY"),
     currency: process.env.PRODUCT_CURRENCY ?? "GBP",
     stripePriceId: process.env.STRIPE_PRICE_ID_YEARLY,
