@@ -3,7 +3,6 @@ import { getOrCreateSession, setSessionCookie } from "@/lib/session/anonymous";
 import { getDb } from "@/lib/db/schema";
 import { verifyEntitlement } from "@/lib/entitlement/check";
 import { generateSingleActivity } from "@/lib/generation/pipeline";
-import { titleExistsInPlan } from "@/lib/generation/similarity";
 import { PlannerPreferences, WeeklyPlanner, MonthlyPlanner, PlannedActivity } from "@/lib/schemas/preferences";
 import { rateLimitMiddleware } from "@/lib/rateLimit/rateLimiter";
 import { verifyGenerationToken } from "@/lib/session/generationToken";
@@ -106,15 +105,26 @@ export async function POST(
       activityIndex,
       targetDomain,
       excludeTitle: currentTitle,
-      excludeTitles: existingTitles,
+      excludeTitles: currentTitle ? [currentTitle] : [],
       excludeMechanic: currentMechanic,
-      excludeMechanics: existingMechanics,
+      excludeMechanics: sourceProductType === "weekly" ? existingMechanics : undefined,
+      // A replacement should be immediate and predictable. The deterministic
+      // engine already enforces the same age, material, safety, and novelty
+      // gates without waiting on repeated external-model retries.
+      forceDeterministic: true,
+      // The current plan is supplied explicitly below. Session-history novelty
+      // would reject every reusable monthly archetype and cause seven needless
+      // retries before returning the unchanged activity.
+      skipSessionNovelty: true,
     });
 
     // Plan-wide novelty verification. Never return an activity that already
     // appears elsewhere in the current plan.
     let noveltyAttempts = 0;
-    while (titleExistsInPlan(newActivity.title, existingTitles) && noveltyAttempts < 7) {
+    const hasExactTitle = (title: string) => existingTitles.some(
+      (existing) => existing.trim().toLowerCase() === title.trim().toLowerCase()
+    );
+    while (hasExactTitle(newActivity.title) && noveltyAttempts < 7) {
       const rejectedTitle = newActivity.title;
       const rejectedMechanic = newActivity.noveltySignature?.split(":")[0];
       noveltyAttempts += 1;
@@ -125,13 +135,17 @@ export async function POST(
         activityIndex,
         targetDomain,
         excludeTitle: rejectedTitle,
-        excludeTitles: [...existingTitles, rejectedTitle],
+        excludeTitles: [currentTitle, rejectedTitle].filter((title): title is string => Boolean(title)),
         excludeMechanic: rejectedMechanic || currentMechanic,
-        excludeMechanics: [...existingMechanics, ...(rejectedMechanic ? [rejectedMechanic] : [])],
+        excludeMechanics: sourceProductType === "weekly"
+          ? [...existingMechanics, ...(rejectedMechanic ? [rejectedMechanic] : [])]
+          : undefined,
+        forceDeterministic: true,
+        skipSessionNovelty: true,
       });
     }
 
-    if (titleExistsInPlan(newActivity.title, existingTitles)) {
+    if (hasExactTitle(newActivity.title)) {
       return NextResponse.json(
         { error: "Could not find a sufficiently different activity. Please try again." },
         { status: 409 }

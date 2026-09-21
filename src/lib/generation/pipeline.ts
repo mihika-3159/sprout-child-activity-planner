@@ -51,6 +51,8 @@ export async function generateSingleActivity(params: {
   excludeTitles?: string[];
   excludeMechanic?: string;
   excludeMechanics?: string[];
+  forceDeterministic?: boolean;
+  skipSessionNovelty?: boolean;
 }): Promise<PlannedActivity> {
   const {
     sessionId,
@@ -135,7 +137,7 @@ export async function generateSingleActivity(params: {
     let rawActivity: Partial<PlannedActivity>;
 
     // If mock or offline, generate directly via deterministic age-calibrated engine
-    if (provider.id === "mock" || (!process.env.GEMINI_API_KEY && !process.env.COHERE_API_KEY)) {
+    if (params.forceDeterministic || provider.id === "mock" || (!process.env.GEMINI_API_KEY && !process.env.COHERE_API_KEY)) {
       rawActivity = generateAgeCalibratedActivity({
         preferences,
         evidence: primaryEvidence,
@@ -289,12 +291,14 @@ Respond with a JSON object:
     };
 
     // 5. Novelty check against session history
-    const noveltyResult = checkActivityNovelty(
-      sessionId,
-      noveltySignature,
-      conceptHash,
-      plannedActivity.title
-    );
+    const noveltyResult = params.skipSessionNovelty
+      ? undefined
+      : checkActivityNovelty(
+          sessionId,
+          noveltySignature,
+          conceptHash,
+          plannedActivity.title
+        );
 
     // 6. Comprehensive validation gates
     const validation = validateActivity(plannedActivity, preferences, noveltyResult);

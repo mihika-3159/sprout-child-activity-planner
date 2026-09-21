@@ -20,6 +20,7 @@ export default function FullPlannerPage() {
   const [productType, setProductType] = useState<string>("weekly");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [regenerationError, setRegenerationError] = useState<string | null>(null);
   const [activeEvidenceDrawer, setActiveEvidenceDrawer] = useState<string | null>(null);
   const [regeneratingActivityId, setRegeneratingActivityId] = useState<string | null>(null);
   const [chatActivity, setChatActivity] = useState<PlannedActivity | null>(null);
@@ -75,11 +76,15 @@ export default function FullPlannerPage() {
     currentTitle?: string,
     currentMechanic?: string
   ) => {
+    setRegenerationError(null);
     setRegeneratingActivityId(`week-${weekNumber}-day-${dayNumber}-${activityIndex}`);
+    const controller = new AbortController();
+    const timeoutId = window.setTimeout(() => controller.abort(), 15000);
     try {
       const res = await fetch(`/api/planner/${generationId}/regenerate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
         body: JSON.stringify({
           dayNumber, activityIndex, weekNumber, currentTitle, currentMechanic,
           preferences: planner?.preferences,
@@ -112,9 +117,15 @@ export default function FullPlannerPage() {
         }
       }
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to regenerate activity. Please try again.");
-      setTimeout(() => setError(null), 4000);
+      setRegenerationError(
+        err instanceof DOMException && err.name === "AbortError"
+          ? "This replacement took too long. Please try again."
+          : err instanceof Error
+            ? err.message
+            : "Failed to regenerate activity. Please try again."
+      );
     } finally {
+      window.clearTimeout(timeoutId);
       setRegeneratingActivityId(null);
     }
   };
@@ -210,6 +221,21 @@ export default function FullPlannerPage() {
       </header>
 
       <main className="container" style={{ maxWidth: "860px", paddingTop: "2.5rem" }}>
+        {regenerationError && (
+          <div
+            role="alert"
+            style={{
+              background: "var(--color-error-bg)",
+              border: "1px solid var(--color-error)",
+              borderRadius: "var(--radius-md)",
+              color: "var(--color-error)",
+              padding: "0.875rem 1rem",
+              marginBottom: "1.5rem",
+            }}
+          >
+            {regenerationError}
+          </div>
+        )}
         {/* Success Banner if freshly unlocked */}
         {isJustUnlocked && (
           <div

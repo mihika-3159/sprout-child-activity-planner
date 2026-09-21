@@ -7,6 +7,8 @@ import { normalizePlannerPreferences, PlannerPreferences } from "../../lib/schem
 import { signGenerationToken, verifyGenerationToken } from "../../lib/session/generationToken";
 import { titleExistsInPlan } from "../../lib/generation/similarity";
 
+const RUN_ID = `${process.pid}-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
 describe("Production Personalisation & Age Safety Suite", () => {
   beforeAll(async () => {
     await ensureEvidenceSeeded();
@@ -26,7 +28,7 @@ describe("Production Personalisation & Age Safety Suite", () => {
     const prefs = normalizePlannerPreferences(rawPrefs);
 
     const activity = await generateSingleActivity({
-      sessionId: "test-toddler-session",
+      sessionId: `${RUN_ID}-test-toddler-session`,
       preferences: prefs,
       dayNumber: 1,
     });
@@ -66,7 +68,7 @@ describe("Production Personalisation & Age Safety Suite", () => {
     const prefs = normalizePlannerPreferences(rawPrefs);
 
     const activity = await generateSingleActivity({
-      sessionId: "test-teen-session",
+      sessionId: `${RUN_ID}-test-teen-session`,
       preferences: prefs,
       dayNumber: 1,
     });
@@ -98,13 +100,13 @@ describe("Production Personalisation & Age Safety Suite", () => {
     });
 
     const toddlerAct = await generateSingleActivity({
-      sessionId: "divergence-test",
+      sessionId: `${RUN_ID}-divergence-test`,
       preferences: toddlerPrefs,
       dayNumber: 1,
     });
 
     const teenAct = await generateSingleActivity({
-      sessionId: "divergence-test",
+      sessionId: `${RUN_ID}-divergence-test`,
       preferences: teenPrefs,
       dayNumber: 1,
     });
@@ -123,7 +125,7 @@ describe("Production Personalisation & Age Safety Suite", () => {
     });
 
     const originalActivity = await generateSingleActivity({
-      sessionId: "regen-test",
+      sessionId: `${RUN_ID}-regen-test`,
       preferences: prefs,
       dayNumber: 2,
     });
@@ -131,7 +133,7 @@ describe("Production Personalisation & Age Safety Suite", () => {
     const currentMechanic = originalActivity.noveltySignature.split(":")[0];
 
     const regeneratedActivity = await generateSingleActivity({
-      sessionId: "regen-test",
+      sessionId: `${RUN_ID}-regen-test`,
       preferences: prefs,
       dayNumber: 2,
       excludeTitle: originalActivity.title,
@@ -151,7 +153,7 @@ describe("Production Personalisation & Age Safety Suite", () => {
     });
 
     const { planner, preview } = await composeMonthlyPlanner({
-      sessionId: "monthly-test",
+      sessionId: `${RUN_ID}-monthly-test`,
       preferences: prefs,
     });
 
@@ -182,7 +184,7 @@ describe("Production Personalisation & Age Safety Suite", () => {
         householdMaterialsOnly: true,
       });
       const activity = await generateSingleActivity({
-        sessionId: `all-ages-${ageBand}`,
+        sessionId: `${RUN_ID}-all-ages-${ageBand}`,
         preferences: prefs,
         dayNumber: 1,
       });
@@ -220,14 +222,14 @@ describe("Production Personalisation & Age Safety Suite", () => {
     });
 
     const day3Activity = await generateSingleActivity({
-      sessionId: "novelty-test-session",
+      sessionId: `${RUN_ID}-novelty-test-session`,
       preferences: teenPrefs,
       dayNumber: 3,
     });
 
     // Simulate regenerating Day 1 with Day 3's title in the exclude list
     const regeneratedDay1 = await generateSingleActivity({
-      sessionId: "novelty-test-session",
+      sessionId: `${RUN_ID}-novelty-test-session`,
       preferences: teenPrefs,
       dayNumber: 1,
       excludeTitles: [day3Activity.title, "Culinary Surface Tension & Capillary Action Investigation"],
@@ -245,7 +247,7 @@ describe("Production Personalisation & Age Safety Suite", () => {
     });
 
     const regenerated = await generateSingleActivity({
-      sessionId: "evidence-parity-session",
+      sessionId: `${RUN_ID}-evidence-parity-session`,
       preferences: prefs,
       dayNumber: 2,
     });
@@ -311,7 +313,7 @@ describe("Production Personalisation & Age Safety Suite", () => {
       householdMaterialsOnly: true,
       productType: "monthly",
     });
-    const { planner } = await composeMonthlyPlanner({ sessionId: `preteen-month-${Date.now()}`, preferences: prefs });
+    const { planner } = await composeMonthlyPlanner({ sessionId: `${RUN_ID}-preteen-month`, preferences: prefs });
     const activities = planner.weeks.flatMap((week) => week.days.flatMap((day) => day.activities));
     expect(activities).toHaveLength(28);
     expect(activities.every((activity) => !`${activity.materials.join(" ")} ${activity.instructions.join(" ")} ${activity.parentSetup.join(" ")}`.toLowerCase().includes("tape"))).toBe(true);
@@ -325,16 +327,54 @@ describe("Production Personalisation & Age Safety Suite", () => {
       environment: "apartment_small_indoor",
       duration: "10-15",
     });
-    const { planner } = await composeWeeklyPlanner({ sessionId: `regen-full-${Date.now()}`, preferences: prefs });
+    const { planner } = await composeWeeklyPlanner({ sessionId: `${RUN_ID}-regen-full`, preferences: prefs });
     const existingTitles = planner.days.flatMap((day) => day.activities.map((activity) => activity.title));
     const existingMechanics = planner.days.flatMap((day) => day.activities.map((activity) => activity.noveltySignature));
     const replacement = await generateSingleActivity({
-      sessionId: `regen-replacement-${Date.now()}`,
+      sessionId: `${RUN_ID}-regen-replacement`,
       preferences: prefs,
       dayNumber: 1,
       excludeTitles: existingTitles,
       excludeMechanics: existingMechanics,
     });
     expect(titleExistsInPlan(replacement.title, existingTitles)).toBe(false);
+  }, 30000);
+
+  it("regenerates deterministically even when an AI key is configured", async () => {
+    const previousKey = process.env.GEMINI_API_KEY;
+    try {
+      const prefs = normalizePlannerPreferences({
+        ageBand: "10-12",
+        interests: ["science"],
+        goals: ["problem_solving"],
+        environment: "indoors",
+        duration: "20-30",
+        materials: ["paper", "pencils_crayons", "cardboard"],
+        householdMaterialsOnly: true,
+      });
+      const current = await generateSingleActivity({
+        sessionId: `${RUN_ID}-regen-production-current`,
+        preferences: prefs,
+        dayNumber: 1,
+        forceDeterministic: true,
+      });
+      process.env.GEMINI_API_KEY = "configured-in-production";
+      const replacement = await generateSingleActivity({
+        sessionId: `${RUN_ID}-regen-production-replacement`,
+        preferences: prefs,
+        dayNumber: 1,
+        excludeTitles: [current.title],
+        excludeMechanic: current.noveltySignature.split(":")[0],
+        forceDeterministic: true,
+        skipSessionNovelty: true,
+      });
+
+      expect(replacement.title).not.toEqual(current.title);
+      expect(replacement.noveltySignature.split(":")[0]).not.toEqual(current.noveltySignature.split(":")[0]);
+      expect(replacement.materials.join(" ").toLowerCase()).not.toContain("tape");
+    } finally {
+      if (previousKey === undefined) delete process.env.GEMINI_API_KEY;
+      else process.env.GEMINI_API_KEY = previousKey;
+    }
   }, 30000);
 });
