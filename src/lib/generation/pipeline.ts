@@ -55,7 +55,7 @@ export async function generateSingleActivity(params: {
   const {
     sessionId,
     dayNumber,
-    maxAttempts = 3,
+    maxAttempts = 7,
     excludeTitle,
     excludeTitles,
     excludeMechanic,
@@ -127,6 +127,8 @@ export async function generateSingleActivity(params: {
   const allSourceIds = Array.from(new Set(retrievedEvidence.map((e) => e.sourceId)));
 
   let lastValidationResult: ValidationResult | null = null;
+  const retryTitles = [...(excludeTitles || []), ...(excludeTitle ? [excludeTitle] : [])];
+  const retryMechanics = [...(excludeMechanics || []), ...(excludeMechanic ? [excludeMechanic] : [])];
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     const provider = getProvider();
@@ -139,9 +141,9 @@ export async function generateSingleActivity(params: {
         evidence: primaryEvidence,
         dayNumber,
         excludeTitle,
-        excludeTitles,
+        excludeTitles: retryTitles,
         excludeMechanic,
-        excludeMechanics,
+        excludeMechanics: retryMechanics,
       });
     } else {
       // 3. Construct generation prompt constrained strictly by retrieved evidence & age band
@@ -326,6 +328,8 @@ Respond with a JSON object:
     console.warn(
       `[Generation] Attempt ${attempt} failed validation gates: ${validation.failedGates.join(", ")}. Warnings: ${validation.warnings.join(", ")}. Retrying...`
     );
+    if (plannedActivity.title) retryTitles.push(plannedActivity.title);
+    if (plannedActivity.noveltySignature) retryMechanics.push(plannedActivity.noveltySignature.split(":")[0]);
   }
 
   // If retries exhausted, return a strictly safe grounded baseline activity
@@ -338,6 +342,10 @@ Respond with a JSON object:
     excludeTitles,
     excludeMechanics
   );
+  const fallbackValidation = validateActivity(fallback, preferences);
+  if (!fallbackValidation.passed) {
+    throw new Error(`Unable to create a safe activity matching these selections: ${fallbackValidation.warnings.join("; ")}`);
+  }
   const fbConcept = createConceptHash({
     domains: fallback.developmentalDomains,
     materials: fallback.materials,

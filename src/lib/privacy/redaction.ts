@@ -20,7 +20,7 @@ const US_ZIPCODE_PATTERN = /\b\d{5}(?:-\d{4})?\b/g;
 
 // Street addresses
 const ADDRESS_PATTERN =
-  /\b\d+\s+[A-Za-z\s]+(Street|St|Avenue|Ave|Road|Rd|Lane|Ln|Drive|Dr|Close|Cl|Way|Court|Ct|Place|Pl)\b/gi;
+  /\b\d+\s+(?:[A-Za-z]+\s+){0,4}(Street|St|Avenue|Ave|Road|Rd|Lane|Ln|Drive|Dr|Close|Cl|Way|Court|Ct)\b/gi;
 
 // Full dates (various formats)
 const DATE_PATTERN =

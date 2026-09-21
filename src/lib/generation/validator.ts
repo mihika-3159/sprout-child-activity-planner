@@ -113,22 +113,22 @@ function validateDuration(
   // Strict boundaries
   switch (durationKey) {
     case "10-15":
-      if (actMax > 20 || actMin > 15) {
+      if (actMin < 10 || actMax > 15) {
         return { passed: false, warnings: [`Duration exceeds 10-15 min band (activity is ${actMin}-${actMax}m)`] };
       }
       break;
     case "20-30":
-      if (actMax > 40 || actMin < 10) {
+      if (actMin < 20 || actMax > 30) {
         return { passed: false, warnings: [`Duration outside 20-30 min band (activity is ${actMin}-${actMax}m)`] };
       }
       break;
     case "30-60":
-      if (actMax > 75 || actMin < 20) {
+      if (actMin < 30 || actMax > 60) {
         return { passed: false, warnings: [`Duration outside 30-60 min band (activity is ${actMin}-${actMax}m)`] };
       }
       break;
     case "60+":
-      if (actMin < 35) {
+      if (actMin < 60) {
         return { passed: false, warnings: [`Duration too short for 60+ min band (activity is ${actMin}-${actMax}m)`] };
       }
       break;
@@ -152,7 +152,7 @@ function validateEnvironment(
     const apartmentBanned = [
       "running", "sprint", "run around", "floor is lava",
       "obstacle course", "jumping over", "jumping challenge", "climb under dining chair",
-      "loud", "stomp feet", "race across", "outdoor", "in the garden", "in the yard"
+      "loud music", "loud noise", "stomp loudly", "stomp feet", "race across", "outdoor", "in the garden", "in the yard"
     ];
     const foundBanned = apartmentBanned.filter((w) => allText.includes(w));
     if (foundBanned.length > 0) {

@@ -111,7 +111,7 @@ export async function composeWeeklyPlanner(params: {
   const parentInvolvement = preferences.involvement || preferences.parentInvolvement || "setup_then_independent";
   const materials = preferences.selectedMaterials || preferences.materials || [];
   const interests = [...(preferences.interests || []), ...(preferences.customInterests || [])];
-  const evidenceSummary = `Curated activities informed by developmental guidelines from the CDC, AAP, and PMC Open Access, calibrated for age band ${targetAge}.`;
+  const evidenceSummary = `Activities are age-calibrated and paired with related developmental reading; the references support broad principles, not a guarantee of outcomes.`;
 
   const fullPlanner: WeeklyPlanner = {
     id: generationId,
@@ -290,7 +290,7 @@ export async function composeMonthlyPlanner(params: {
     totalActivitiesCount: 28,
     materialsOverview: materialsList,
     prepWeekSummary: fullMonthlyPlanner.prepThisMonth,
-    evidenceSummary: `4-week evidence curriculum grounded in peer-reviewed child development research.`,
+    evidenceSummary: `Activities include related developmental reading for context; individual results vary.`,
     isUnlocked: false,
   };
 

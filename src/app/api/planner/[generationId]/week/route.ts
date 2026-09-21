@@ -31,13 +31,22 @@ export async function POST(
     const { generationId } = await params;
 
     const body = await request.json();
-    const { weekNumber } = body as { weekNumber: number };
+    const { weekNumber, preferences: bodyPreferences, existingTitles = [], existingMechanics = [] } = body as {
+      weekNumber: number;
+      preferences?: PlannerPreferences;
+      existingTitles?: string[];
+      existingMechanics?: string[];
+    };
 
     if (!weekNumber || weekNumber < 1 || weekNumber > 4) {
       return NextResponse.json({ error: "weekNumber must be 1–4" }, { status: 400 });
     }
 
     const db = getDb();
+    const genTokenHeader = request.headers.get("x-generation-token");
+    const genTokenQuery = request.nextUrl.searchParams.get("token");
+    const passedToken = genTokenHeader || genTokenQuery;
+    const isTokenValid = Boolean(passedToken && verifyGenerationToken(generationId, passedToken));
     const generation = db
       .prepare("SELECT preferences, full_data, product_type, session_id FROM planner_generations WHERE id = ?")
       .get(generationId) as {
@@ -47,7 +56,7 @@ export async function POST(
         session_id: string;
       } | undefined;
 
-    if (!generation) {
+    if (!generation && (!isTokenValid || !bodyPreferences)) {
       return NextResponse.json({ error: "Generation not found" }, { status: 404 });
     }
 
@@ -55,11 +64,7 @@ export async function POST(
     const isDemoMode = process.env.DEMO_MODE !== "false" || !process.env.STRIPE_SECRET_KEY;
 
     // Accept token from header OR query param (consistent with GET route)
-    const genTokenHeader = request.headers.get("x-generation-token");
-    const genTokenQuery = request.nextUrl.searchParams.get("token");
-    const passedToken = genTokenHeader || genTokenQuery;
-    const isTokenValid = Boolean(passedToken && verifyGenerationToken(generationId, passedToken));
-    const isOwner = sessionId && generation.session_id === sessionId;
+    const isOwner = Boolean(sessionId && generation?.session_id === sessionId);
 
     if (!isDemoMode && !isOwner && !isTokenValid) {
       return NextResponse.json(
@@ -68,12 +73,35 @@ export async function POST(
       );
     }
 
-    if (generation.product_type !== "monthly") {
+    if (generation && generation.product_type !== "monthly") {
       return NextResponse.json({ error: "This endpoint is for monthly plans only" }, { status: 400 });
     }
 
-    const preferences: PlannerPreferences = JSON.parse(generation.preferences);
+    const preferences: PlannerPreferences = generation ? JSON.parse(generation.preferences) : bodyPreferences!;
     const theme = WEEKLY_THEMES[weekNumber - 1];
+
+    // Stateless path: Vercel's /tmp storage is not shared between function invocations.
+    // A signed generation token plus validated preferences lets each week stand alone;
+    // the browser assembles and persists the complete plan.
+    if (!generation) {
+      const parsed = (await import("@/lib/schemas/preferences")).PlannerPreferencesSchema.safeParse(preferences);
+      if (!parsed.success) return NextResponse.json({ error: "Invalid preferences", details: parsed.error.flatten() }, { status: 400 });
+      const weekActivities = await Promise.all([1, 2, 3, 4, 5, 6, 7].map((dayNum) =>
+        generateSingleActivity({
+          sessionId: generationId,
+          preferences: parsed.data,
+          dayNumber: (weekNumber - 1) * 7 + dayNum,
+          targetDomain: theme,
+          excludeTitles: existingTitles,
+          excludeMechanics: existingMechanics,
+        })
+      ));
+      return NextResponse.json({
+        success: true,
+        week: { weekNumber, theme, days: weekActivities.map((activity, i) => ({ dayNumber: i + 1, activities: [activity] })) },
+        isComplete: weekNumber === 4,
+      });
+    }
 
     // Check if this week's activities are already generated (idempotent retry)
     const existingWeekRows = db.prepare(
@@ -93,6 +121,8 @@ export async function POST(
             preferences,
             dayNumber: (weekNumber - 1) * 7 + dayNum,
             targetDomain: theme,
+            excludeTitles: existingTitles,
+            excludeMechanics: existingMechanics,
           })
         )
       );
@@ -213,7 +243,7 @@ export async function POST(
         totalActivitiesCount: 28,
         materialsOverview: materialsList,
         prepWeekSummary: fullMonthlyPlanner.prepThisMonth,
-        evidenceSummary: `4-week evidence curriculum grounded in peer-reviewed child development research.`,
+        evidenceSummary: `Activities include related developmental reading for context; individual results vary.`,
         isUnlocked: false,
       };
 

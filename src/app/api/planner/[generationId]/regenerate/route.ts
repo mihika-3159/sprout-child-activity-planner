@@ -6,6 +6,7 @@ import { generateSingleActivity } from "@/lib/generation/pipeline";
 import { titleExistsInPlan } from "@/lib/generation/similarity";
 import { PlannerPreferences, WeeklyPlanner, MonthlyPlanner, PlannedActivity } from "@/lib/schemas/preferences";
 import { rateLimitMiddleware } from "@/lib/rateLimit/rateLimiter";
+import { verifyGenerationToken } from "@/lib/session/generationToken";
 
 export async function POST(
   request: NextRequest,
@@ -22,12 +23,16 @@ export async function POST(
     }
 
     const body = await request.json();
-    const { dayNumber, weekNumber = 1, activityIndex = 0, currentTitle, currentMechanic } = body as {
+    const { dayNumber, weekNumber = 1, activityIndex = 0, currentTitle, currentMechanic,
+      preferences: bodyPreferences, planner: bodyPlanner, generationToken } = body as {
       dayNumber: number;
       weekNumber?: number;
       activityIndex?: number;
       currentTitle?: string;
       currentMechanic?: string;
+      preferences?: PlannerPreferences;
+      planner?: WeeklyPlanner | MonthlyPlanner;
+      generationToken?: string;
     };
 
     if (!dayNumber) {
@@ -35,10 +40,8 @@ export async function POST(
     }
 
     // Verify entitlement if user is accessing full planner
-    const entitlement = verifyEntitlement(sessionId, generationId);
-    if (!entitlement && dayNumber > 1) {
-      return NextResponse.json({ error: "Purchase required to regenerate locked days" }, { status: 403 });
-    }
+    const isDemoMode = process.env.DEMO_MODE !== "false" || !process.env.STRIPE_SECRET_KEY;
+    const tokenValid = Boolean(generationToken && verifyGenerationToken(generationId, generationToken));
 
     const db = getDb();
     const generation = db
@@ -49,26 +52,33 @@ export async function POST(
         product_type: string;
       } | undefined;
 
-    if (!generation || !generation.full_data) {
+    if ((!generation || !generation.full_data) && (!tokenValid || !bodyPreferences || !bodyPlanner)) {
       return NextResponse.json({ error: "Planner not found" }, { status: 404 });
     }
 
-    const preferences: PlannerPreferences = JSON.parse(generation.preferences);
+    const entitlement = verifyEntitlement(sessionId, generationId);
+    if (!isDemoMode && !entitlement && !tokenValid) {
+      return NextResponse.json({ error: "Access denied" }, { status: 403 });
+    }
+
+    const preferences: PlannerPreferences = generation ? JSON.parse(generation.preferences) : bodyPreferences!;
 
     // Extract ALL existing titles and mechanics in the current plan to prevent duplication
     const existingTitles: string[] = [];
     const existingMechanics: string[] = [];
 
-    if (generation.product_type === "weekly") {
-      const weekly: WeeklyPlanner = JSON.parse(generation.full_data);
+    const sourcePlanner = generation?.full_data ? JSON.parse(generation.full_data) as WeeklyPlanner | MonthlyPlanner : bodyPlanner!;
+    const sourceProductType = generation?.product_type || ("days" in sourcePlanner ? "weekly" : "monthly");
+    if (sourceProductType === "weekly") {
+      const weekly = sourcePlanner as WeeklyPlanner;
       for (const d of weekly.days) {
         for (const act of d.activities) {
           if (act.title) existingTitles.push(act.title);
           if (act.noveltySignature) existingMechanics.push(act.noveltySignature);
         }
       }
-    } else if (generation.product_type === "monthly") {
-      const monthly: MonthlyPlanner = JSON.parse(generation.full_data);
+    } else if (sourceProductType === "monthly") {
+      const monthly = sourcePlanner as MonthlyPlanner;
       for (const w of monthly.weeks) {
         for (const d of w.days) {
           for (const act of d.activities) {
@@ -132,8 +142,8 @@ export async function POST(
     );
 
     // Update full_data in planner_generations
-    if (generation.product_type === "weekly") {
-      const weekly: WeeklyPlanner = JSON.parse(generation.full_data);
+    if (generation && generation.product_type === "weekly") {
+      const weekly: WeeklyPlanner = JSON.parse(generation.full_data!);
       const day = weekly.days.find((d) => d.dayNumber === dayNumber);
       if (day) {
         day.activities[activityIndex] = newActivity;
@@ -142,8 +152,8 @@ export async function POST(
           generationId
         );
       }
-    } else if (generation.product_type === "monthly") {
-      const monthly: MonthlyPlanner = JSON.parse(generation.full_data);
+    } else if (generation && generation.product_type === "monthly") {
+      const monthly: MonthlyPlanner = JSON.parse(generation.full_data!);
       const week = monthly.weeks.find((w) => w.weekNumber === weekNumber);
       const day = week?.days.find((d) => d.dayNumber === dayNumber);
       if (day) {
@@ -156,7 +166,7 @@ export async function POST(
     }
 
     db.prepare("INSERT INTO analytics_events (event_type, product_type) VALUES ('regenerate_activity', ?)").run(
-      generation.product_type
+      sourceProductType
     );
 
     const response = NextResponse.json({

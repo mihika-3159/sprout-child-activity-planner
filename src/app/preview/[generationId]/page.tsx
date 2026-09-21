@@ -164,7 +164,7 @@ export default function PreviewPage() {
               Day 1 (Full Free Preview)
             </h2>
             {day1Activity.evidence?.[0]?.sourceTitle ? (
-              <span className="evidence-badge evidence-badge-strong">Research-linked</span>
+              <span className="evidence-badge evidence-badge-moderate">Related reading</span>
             ) : day1Activity.rationale ? (
               <span className="evidence-badge evidence-badge-moderate">Developmental rationale</span>
             ) : (
@@ -191,7 +191,7 @@ export default function PreviewPage() {
               }}
             >
               <p style={{ fontSize: "0.8125rem", fontWeight: 700, fontFamily: "'Outfit', sans-serif", color: "var(--color-sage-700)", marginBottom: "0.375rem" }}>
-                Why it's here (Evidence-Grounded Rationale)
+                Why it may fit
               </p>
               <p style={{ fontSize: "0.875rem", color: "var(--color-stone-600)", lineHeight: 1.6 }}>
                 {day1Activity.rationale}
@@ -211,12 +211,12 @@ export default function PreviewPage() {
                 }}
                 id="btn-toggle-evidence-drawer"
               >
-                {showEvidenceDrawer ? "Hide scientific citation ↑" : "Inspect scientific study & citation ↓"}
+                {showEvidenceDrawer ? "Hide related reading ↑" : "View related developmental reading ↓"}
               </button>
 
               {showEvidenceDrawer && day1Activity.evidence && (
                 <div style={{ marginTop: "0.75rem", paddingTop: "0.75rem", borderTop: "1px dashed var(--color-sage-300)", fontSize: "0.8125rem", color: "var(--color-stone-600)" }}>
-                  <p style={{ fontWeight: 600, color: "var(--color-stone-800)" }}>Supporting Research:</p>
+                  <p style={{ fontWeight: 600, color: "var(--color-stone-800)" }}>Related source:</p>
                   <p>{day1Activity.evidence[0]?.supportExplanation}</p>
                 </div>
               )}

@@ -232,7 +232,7 @@ export const PlannedActivitySchema = z.object({
   setupMinutes: z.number().int().min(0).max(60),
   activityMinutes: z.object({
     min: z.number().int().min(1),
-    max: z.number().int().min(180),
+    max: z.number().int().min(1).max(180),
   }),
   supervisionLevel: z.enum(SUPERVISION_LEVELS),
   parentSetup: z.array(z.string()).max(6),

@@ -167,9 +167,32 @@ describe("Production Personalisation & Age Safety Suite", () => {
       }
     }
 
-    // Ensure activities across 28 days are not identical
-    expect(allTitles.size).toBeGreaterThan(5);
+    expect(allTitles.size).toBe(28);
   }, 25000);
+
+  it("returns the selected target age and exact duration for every supported age band", async () => {
+    const ages = ["2-3", "4-5", "6-7", "8-9", "10-12", "13+"] as const;
+    for (const ageBand of ages) {
+      const prefs = normalizePlannerPreferences({
+        ageBand,
+        interests: ["science"],
+        goals: ["problem_solving"],
+        environment: "indoors",
+        duration: "20-30",
+        householdMaterialsOnly: true,
+      });
+      const activity = await generateSingleActivity({
+        sessionId: `all-ages-${ageBand}`,
+        preferences: prefs,
+        dayNumber: 1,
+      });
+      expect(activity.targetAgeBand).toBe(ageBand);
+      expect(activity.activityMinutes.min).toBe(20);
+      expect(activity.activityMinutes.max).toBe(30);
+      expect(activity.evidence[0]?.sourceTitle).toBeTruthy();
+      if (ageBand === "2-3") expect(activity.supervisionLevel).toBe("active_supervision");
+    }
+  }, 30000);
 
   it("Scenario F: Stateless generation token signs and verifies reliably for monthly chunks", () => {
     const genId = "00000000-0000-0000-0000-000000000001";

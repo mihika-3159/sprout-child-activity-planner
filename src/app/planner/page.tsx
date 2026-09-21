@@ -36,6 +36,7 @@ import {
   normalizePlannerPreferences,
 } from "@/lib/schemas/preferences";
 import { PRIVACY_NOTICE, redactIdentifyingInformation, getPrivacyReminderMessage } from "@/lib/privacy/redaction";
+import { savePlanner } from "@/lib/planner/clientStorage";
 
 interface ChatMessage {
   id: string;
@@ -149,6 +150,9 @@ export default function PlannerChatPage() {
         const generationId: string = data.generationId;
         const totalWeeks: number = data.totalWeeks ?? 4;
         const generationToken: string | undefined = data.generationToken;
+        const weeks: any[] = [];
+        const existingTitles: string[] = [];
+        const existingMechanics: string[] = [];
 
         for (let week = 1; week <= totalWeeks; week++) {
           if (abort.signal.aborted) throw new Error("Generation was cancelled.");
@@ -166,7 +170,7 @@ export default function PlannerChatPage() {
                   "Content-Type": "application/json",
                   ...(generationToken ? { "X-Generation-Token": generationToken } : {}),
                 },
-                body: JSON.stringify({ weekNumber: week }),
+                body: JSON.stringify({ weekNumber: week, preferences, existingTitles, existingMechanics }),
                 signal: abort.signal,
               });
               weekData = await weekRes.json();
@@ -179,6 +183,11 @@ export default function PlannerChatPage() {
           if (!weekRes || !weekRes.ok) {
             throw new Error((weekData && weekData.error) || (lastErr && lastErr.message) || `Failed generating week ${week}`);
           }
+          weeks.push(weekData.week);
+          for (const day of weekData.week.days) for (const activity of day.activities) {
+            existingTitles.push(activity.title);
+            if (activity.noveltySignature) existingMechanics.push(activity.noveltySignature);
+          }
         }
 
         setMonthlyProgress("Finalising your monthly plan…");
@@ -186,6 +195,26 @@ export default function PlannerChatPage() {
         if (generationToken) {
           try { sessionStorage.setItem(`sprout_token_${generationId}`, generationToken); } catch {}
         }
+        const allMaterials = Array.from(
+          new Set<string>(weeks.flatMap((w) => w.days.flatMap((d: any) => d.activities.flatMap((a: any) => a.materials as string[]))))
+        );
+        const monthlyPlanner = {
+          id: generationId,
+          sessionId: generationId,
+          preferences,
+          generatedAt: new Date().toISOString(),
+          monthlyOverview: {
+            activityMix: "A varied month of hands-on activities matched to your selections.",
+            materialsToKeepNearby: allMaterials.slice(0, 8),
+            estimatedParentPrepPerWeek: "About 10 minutes of advance setup.",
+            optionalWeeklyThemes: weeks.map((w) => w.theme),
+            numberOfLowSupervisionActivities: weeks.flatMap((w) => w.days).filter((d: any) => d.activities[0].supervisionLevel !== "active_supervision").length,
+          },
+          prepThisMonth: `Keep these materials together where practical: ${allMaterials.slice(0, 8).join(", ")}. Check each activity's supervision and safety notes before starting.`,
+          weeks,
+          globalMaterialsPool: allMaterials,
+        };
+        savePlanner(generationId, { planner: monthlyPlanner, productType: "monthly", generationToken, savedAt: new Date().toISOString() });
         router.push(`/planner/${generationId}${generationToken ? `?token=${encodeURIComponent(generationToken)}` : ""}`);
         return;
       }
@@ -196,6 +225,7 @@ export default function PlannerChatPage() {
       if (weeklyToken) {
         try { sessionStorage.setItem(`sprout_token_${data.generationId}`, weeklyToken); } catch {}
       }
+      if (data.planner) savePlanner(data.generationId, { planner: data.planner, productType: "weekly", generationToken: weeklyToken, savedAt: new Date().toISOString() });
       router.push(`/planner/${data.generationId}${weeklyToken ? `?token=${encodeURIComponent(weeklyToken)}` : ""}`);
     } catch (err: unknown) {
       clearTimeout(timeoutId);

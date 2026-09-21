@@ -15,19 +15,6 @@ export interface SafetyCheckResult {
   requiredSafetyNotes: string[];
 }
 
-// Low-risk whitelist for Age 2-3 allowing "setup_then_independent"
-const TODDLER_INDEPENDENT_WHITELIST_KEYWORDS = [
-  "soft towel",
-  "cushion",
-  "large box",
-  "large plastic bowl",
-  "stacking cups",
-  "rolling large ball",
-  "stomp",
-  "crawling path",
-  "fabric scraps",
-];
-
 // Age 2-3 Prohibited Materials (Choking, Sharps, Hazards)
 const TODDLER_CHOKING_HAZARDS = [
   "coin",
@@ -155,7 +142,7 @@ function findKeywords(text: string, list: string[]): string[] {
   return list.filter((keyword) => {
     // Word-boundary aware or clean phrase matching
     const regex = new RegExp(`\\b${keyword.replace(/[-/\\^$*+?.()|[\]{}]/g, "\\$&")}\\b`, "i");
-    return regex.test(lower) || lower.includes(keyword.toLowerCase());
+    return regex.test(lower);
   });
 }
 
@@ -211,15 +198,10 @@ export function evaluateActivitySafety(
     }
 
     // 5. Supervision escalation: Defaults to active adult supervision
-    const isWhitelisted = TODDLER_INDEPENDENT_WHITELIST_KEYWORDS.some((kw) =>
-      allText.toLowerCase().includes(kw)
-    );
-
     if (activity.supervisionLevel === "independent") {
       violations.push("Age 2-3 activities must never be marked fully independent");
-      recommendedSupervision = isWhitelisted ? "setup_then_independent" : "active_supervision";
-    } else if (activity.supervisionLevel === "setup_then_independent" && !isWhitelisted) {
-      // Must escalate to active supervision if not on low-risk whitelist
+      recommendedSupervision = "active_supervision";
+    } else if (activity.supervisionLevel === "setup_then_independent" || activity.supervisionLevel === "periodic_checkin") {
       recommendedSupervision = "active_supervision";
       requiredSafetyNotes.push("Continuous adult supervision required for this toddler activity.");
     } else {
@@ -335,6 +317,9 @@ export function validateMaterialsAllowlist(
     "twigs",
     "stones",
     "outdoor_natural",
+    "clean sponge",
+    "dry sponge",
+    "sponge",
   ];
 
   // Items that are strictly SPECIAL and CANNOT be assumed unless explicitly selected by parent
@@ -375,8 +360,6 @@ export function validateMaterialsAllowlist(
     "dry pasta",
     "string",
     "yarn",
-    "cleaning sponge",
-    "sponge",
   ];
 
   const selectedLower = selectedMaterials.map((m) => m.toLowerCase().replace(/_/g, " "));

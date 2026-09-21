@@ -111,7 +111,7 @@ function Hero() {
             }}
           >
             <span role="img" aria-label="Seedling">🌱</span>
-            Evidence-grounded activity planning
+            Research-informed activity planning
           </div>
 
           <h1
@@ -174,7 +174,7 @@ function Hero() {
           >
             {[
               { emoji: "🔒", text: "No sign-up required" },
-              { emoji: "📚", text: "Evidence-grounded" },
+              { emoji: "📚", text: "Research-informed" },
               { emoji: "🏠", text: "Uses things you have at home" },
             ].map((item) => (
               <div
@@ -341,8 +341,8 @@ function WhyParents() {
     },
     {
       icon: "📖",
-      title: "Evidence-grounded",
-      desc: "Suggestions are grounded in peer-reviewed developmental research, not AI imagination or parenting blogs — though no activity catalogue is exhaustive.",
+      title: "Research-informed",
+      desc: "Suggestions draw on broad child-development principles and include related reading. They are practical ideas, not promises of developmental outcomes.",
     },
   ];
 
@@ -685,7 +685,7 @@ function ExamplePreview() {
               </h3>
             </div>
             <div style={{ display: "flex", gap: "0.5rem", flexShrink: 0 }}>
-              <span className="evidence-badge evidence-badge-strong">Strong evidence</span>
+              <span className="evidence-badge evidence-badge-moderate">Research-informed example</span>
             </div>
           </div>
 
@@ -709,9 +709,9 @@ function ExamplePreview() {
               Why it's here
             </p>
             <p style={{ fontSize: "0.875rem", color: "var(--color-stone-600)", lineHeight: 1.6 }}>
-              Combines narrative drawing with emergent literacy. Research
-              suggests this type of imaginative mapping supports spatial
-              reasoning and story-structure understanding in this age group.
+              Combines narrative drawing, spatial thinking, and storytelling.
+              The linked reading provides developmental context; it does not
+              establish that this exact activity produces a particular outcome.
             </p>
           </div>
 

@@ -988,7 +988,16 @@ export const APPROVED_EVIDENCE_SEEDS: SeedSourceWithChunks[] = [
  * Ensures approved evidence seeds are present and embedded in the database.
  * Synchronizes any new sources and chunks into the database idempotently.
  */
+let activeSeed: Promise<void> | null = null;
+
 export async function ensureEvidenceSeeded(): Promise<void> {
+  if (!activeSeed) {
+    activeSeed = seedEvidence().finally(() => { activeSeed = null; });
+  }
+  return activeSeed;
+}
+
+async function seedEvidence(): Promise<void> {
   const db = getDb();
 
   // Query already seeded source IDs and chunk IDs

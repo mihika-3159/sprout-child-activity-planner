@@ -7,6 +7,7 @@ import { WeeklyPlanner, MonthlyPlanner, PlannedActivity } from "@/lib/schemas/pr
 import FeedbackWidget from "@/components/FeedbackWidget";
 import ActivityChatDrawer from "@/components/ActivityChatDrawer";
 import { formatMaterial, formatSupervision, formatGoal, humanize } from "@/lib/utils/formatters";
+import { clearSproutStorage, loadPlanner, savePlanner } from "@/lib/planner/clientStorage";
 
 export default function FullPlannerPage() {
   const params = useParams();
@@ -26,6 +27,14 @@ export default function FullPlannerPage() {
   useEffect(() => {
     async function loadFullPlanner() {
       try {
+        const locallyStored = loadPlanner(generationId);
+        if (locallyStored) {
+          if (locallyStored.generationToken) sessionStorage.setItem(`sprout_token_${generationId}`, locallyStored.generationToken);
+          setPlanner(locallyStored.planner);
+          setProductType(locallyStored.productType);
+          setLoading(false);
+          return;
+        }
         const tokenFromStorage = typeof window !== "undefined" ? sessionStorage.getItem(`sprout_token_${generationId}`) : null;
         const searchToken = typeof window !== "undefined" ? new URLSearchParams(window.location.search).get("token") : null;
         const effectiveToken = searchToken || tokenFromStorage;
@@ -66,12 +75,17 @@ export default function FullPlannerPage() {
     currentTitle?: string,
     currentMechanic?: string
   ) => {
-    setRegeneratingActivityId(`day-${dayNumber}-${activityIndex}`);
+    setRegeneratingActivityId(`week-${weekNumber}-day-${dayNumber}-${activityIndex}`);
     try {
       const res = await fetch(`/api/planner/${generationId}/regenerate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ dayNumber, activityIndex, weekNumber, currentTitle, currentMechanic }),
+        body: JSON.stringify({
+          dayNumber, activityIndex, weekNumber, currentTitle, currentMechanic,
+          preferences: planner?.preferences,
+          planner,
+          generationToken: sessionStorage.getItem(`sprout_token_${generationId}`),
+        }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -85,6 +99,7 @@ export default function FullPlannerPage() {
         if (day) {
           day.activities[activityIndex] = data.activity;
           setPlanner({ ...updated });
+          savePlanner(generationId, { planner: updated, productType: "weekly", generationToken: sessionStorage.getItem(`sprout_token_${generationId}`) || undefined, savedAt: new Date().toISOString() });
         }
       } else if (planner && "weeks" in planner) {
         const updated = { ...planner } as MonthlyPlanner;
@@ -93,6 +108,7 @@ export default function FullPlannerPage() {
         if (day) {
           day.activities[activityIndex] = data.activity;
           setPlanner({ ...updated });
+          savePlanner(generationId, { planner: updated, productType: "monthly", generationToken: sessionStorage.getItem(`sprout_token_${generationId}`) || undefined, savedAt: new Date().toISOString() });
         }
       }
     } catch (err: unknown) {
@@ -108,6 +124,7 @@ export default function FullPlannerPage() {
       return;
     }
     await fetch("/api/session/clear", { method: "POST" });
+    clearSproutStorage();
     router.push("/");
   };
 
@@ -140,12 +157,15 @@ export default function FullPlannerPage() {
   }
 
   const isWeekly = "days" in planner;
-  const daysList = isWeekly ? (planner as WeeklyPlanner).days : (planner as MonthlyPlanner).weeks[0].days;
+  const daysList = isWeekly
+    ? (planner as WeeklyPlanner).days.map((day) => ({ ...day, weekNumber: 1 }))
+    : (planner as MonthlyPlanner).weeks.flatMap((week) => week.days.map((day) => ({ ...day, weekNumber: week.weekNumber })));
 
   return (
     <div style={{ minHeight: "100vh", background: "var(--color-cream)", paddingBottom: "5rem" }}>
       {/* Header */}
       <header
+        className="planner-controls"
         style={{
           borderBottom: "1px solid var(--color-stone-200)",
           background: "white",
@@ -169,15 +189,14 @@ export default function FullPlannerPage() {
             🌱 Sprout Planner
           </Link>
           <div style={{ display: "flex", gap: "0.5rem" }}>
-            <a
-              href={`/api/download/${generationId}`}
-              target="_blank"
-              rel="noopener noreferrer"
+            <button
+              type="button"
+              onClick={() => window.print()}
               className="btn btn-secondary btn-sm"
               id="btn-download-pdf"
             >
               🖨️ Printable PDF / View
-            </a>
+            </button>
             <button
               onClick={handleClearSession}
               className="btn btn-ghost btn-sm"
@@ -224,7 +243,7 @@ export default function FullPlannerPage() {
             Your Personalized Activity Plan
           </h1>
           <p style={{ color: "var(--color-stone-500)", fontSize: "1.0625rem" }}>
-            7 days of balanced, screen-free, evidence-grounded activities.
+            {isWeekly ? "7 days" : "4 weeks"} of screen-free activities matched to your selections.
           </p>
         </div>
 
@@ -274,33 +293,33 @@ export default function FullPlannerPage() {
         <div style={{ display: "flex", flexDirection: "column", gap: "2rem" }}>
           {daysList.map((day) => {
             const act = day.activities[0];
-            const isRegenerating = regeneratingActivityId === `day-${day.dayNumber}-0`;
+            const isRegenerating = regeneratingActivityId === `week-${day.weekNumber}-day-${day.dayNumber}-0`;
 
             return (
               <article
-                key={day.dayNumber}
+                key={`${day.weekNumber}-${day.dayNumber}`}
                 className="card card-elevated"
                 style={{ padding: "2rem", position: "relative" }}
-                id={`activity-day-${day.dayNumber}`}
+                id={`activity-week-${day.weekNumber}-day-${day.dayNumber}`}
               >
                 {/* Header */}
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "1rem", marginBottom: "1rem" }}>
                   <div>
                     <span style={{ fontSize: "0.75rem", fontWeight: 700, fontFamily: "'Outfit', sans-serif", color: "var(--color-sage-600)", letterSpacing: "0.05em" }}>
-                      DAY {day.dayNumber}
+                      {isWeekly ? `DAY ${day.dayNumber}` : `WEEK ${day.weekNumber} · DAY ${day.dayNumber}`}
                     </span>
                     <h3 style={{ fontFamily: "'Outfit', sans-serif", fontSize: "1.375rem", marginTop: "0.25rem" }}>
                       {act.title.replace(/_/g, " ")}
                     </h3>
                   </div>
 
-                  <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
+                  <div className="planner-controls" style={{ display: "flex", gap: "0.5rem", alignItems: "center", flexWrap: "wrap" }}>
                     <button
                       type="button"
                       onClick={() => setChatActivity(act)}
                       className="btn btn-secondary btn-sm"
                       style={{ fontSize: "0.8125rem" }}
-                      id={`btn-chat-day-${day.dayNumber}`}
+                      id={`btn-chat-week-${day.weekNumber}-day-${day.dayNumber}`}
                       title="Ask questions, get low-mess adaptations, or advice for reluctant children"
                     >
                       💬 Ask Sprout Coach
@@ -311,19 +330,19 @@ export default function FullPlannerPage() {
                       onClick={() => handleRegenerateActivity(
                         day.dayNumber,
                         0,
-                        1,
+                        day.weekNumber,
                         act.title,
                         act.noveltySignature?.split(":")[0] || undefined
                       )}
                       className="btn btn-ghost btn-sm"
                       style={{ fontSize: "0.8125rem", border: "1px solid var(--color-stone-200)" }}
                       title="Generate a different activity for this day"
-                      id={`btn-regenerate-day-${day.dayNumber}`}
+                      id={`btn-regenerate-week-${day.weekNumber}-day-${day.dayNumber}`}
                     >
                       {isRegenerating ? "Generating..." : "🔄 Try Different Activity"}
                     </button>
                     {act.evidence?.[0]?.sourceTitle ? (
-                      <span className="evidence-badge evidence-badge-strong">Research-linked</span>
+                      <span className="evidence-badge evidence-badge-strong">Related reading</span>
                     ) : act.rationale ? (
                       <span className="evidence-badge evidence-badge-moderate">Developmental rationale</span>
                     ) : (
@@ -373,6 +392,7 @@ export default function FullPlannerPage() {
                     {act.rationale.replace(/_/g, " ")}
                   </p>
                   <button
+                    className="planner-controls"
                     type="button"
                     onClick={() => setActiveEvidenceDrawer(activeEvidenceDrawer === act.id ? null : act.id)}
                     style={{
@@ -408,7 +428,7 @@ export default function FullPlannerPage() {
                         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: "0.5rem" }}>
                           <div>
                             <span style={{ fontWeight: 700, color: "var(--color-sage-800)", textTransform: "uppercase", fontSize: "0.6875rem", letterSpacing: "0.05em" }}>
-                              Related Evidence
+                              Related developmental reading
                             </span>
                             {ev?.sourceTitle && (
                               <h5 style={{ margin: "0.2rem 0 0", fontSize: "0.8125rem", fontWeight: 600, color: "var(--color-stone-900)" }}>
@@ -445,7 +465,7 @@ export default function FullPlannerPage() {
                         {(ev?.relevantFindingSummary || ev?.supportExplanation) && (
                           <div style={{ background: "white", padding: "0.625rem 0.75rem", borderRadius: "var(--radius-sm)", border: "1px solid var(--color-sage-200)" }}>
                             <span style={{ fontWeight: 600, color: "var(--color-stone-800)", display: "block", marginBottom: "0.15rem" }}>
-                              Key finding:
+                              Source summary:
                             </span>
                             <p style={{ margin: 0, lineHeight: 1.5 }}>
                               {ev.relevantFindingSummary || ev.supportExplanation}
@@ -558,7 +578,7 @@ export default function FullPlannerPage() {
         </div>
 
         {/* Community Beta / Demo Feedback Widget */}
-        <FeedbackWidget generationId={generationId} />
+        <div className="planner-controls"><FeedbackWidget generationId={generationId} /></div>
 
         {/* Activity Chat Drawer */}
         {chatActivity && (
@@ -569,6 +589,15 @@ export default function FullPlannerPage() {
             onClose={() => setChatActivity(null)}
           />
         )}
+        <style jsx global>{`
+          @media print {
+            @page { size: auto; margin: 12mm; }
+            .planner-controls { display: none !important; }
+            body { background: white !important; }
+            article { break-inside: avoid; box-shadow: none !important; }
+            main { max-width: none !important; padding-top: 0 !important; }
+          }
+        `}</style>
       </main>
     </div>
   );

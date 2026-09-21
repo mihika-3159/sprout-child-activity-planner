@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { validateActivity } from "../../lib/generation/validator";
-import { PlannedActivity, PlannerPreferences } from "../../lib/schemas/preferences";
+import { PlannedActivity, PlannedActivitySchema, PlannerPreferences } from "../../lib/schemas/preferences";
 
 describe("Activity Validation Gates (Spec Section 22)", () => {
   const basePreferences: PlannerPreferences = {
@@ -21,14 +21,14 @@ describe("Activity Validation Gates (Spec Section 22)", () => {
   };
 
   const validActivity: PlannedActivity = {
-    id: "act-1",
+    id: "00000000-0000-4000-8000-000000000001",
     title: "Cardboard Jungle Safari",
     targetAgeBand: "4-5",
     description: "Draw and cut out simple animal shapes, then set up a small jungle scene on the floor.",
     instructions: ["Draw animals on cardboard", "Colour them in", "Stand them up in an egg carton"],
     materials: ["cardboard", "pencils_crayons"],
     setupMinutes: 2,
-    activityMinutes: { min: 15, max: 25 },
+    activityMinutes: { min: 20, max: 25 },
     supervisionLevel: "setup_then_independent",
     parentSetup: ["Help cut the cardboard if needed"],
     developmentalDomains: ["creativity", "fine_motor"],
@@ -56,6 +56,14 @@ describe("Activity Validation Gates (Spec Section 22)", () => {
     const result = validateActivity(validActivity, basePreferences);
     expect(result.passed).toBe(true);
     expect(result.failedGates.length).toBe(0);
+  });
+
+  it("accepts a normal activity duration and rejects an excessive maximum", () => {
+    expect(PlannedActivitySchema.safeParse(validActivity).success).toBe(true);
+    expect(PlannedActivitySchema.safeParse({
+      ...validActivity,
+      activityMinutes: { min: 20, max: 181 },
+    }).success).toBe(false);
   });
 
   it("fails the age gate when target age band mismatches child age", () => {

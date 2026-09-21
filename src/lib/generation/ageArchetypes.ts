@@ -74,7 +74,7 @@ const TODDLER_ARCHETYPES: DynamicArchetype[] = [
     mechanic: "tactile_sorting",
     generate: ({ preferences, evidence, dayNumber, interest }) => {
       const id = uuidv4();
-      const interestLabel = cleanText(interest);
+      const interestLabel = normalizeInterestLabel(interest);
       const isApartment = preferences.environment === "apartment_small_indoor";
       return {
         id,
@@ -124,7 +124,7 @@ const TODDLER_ARCHETYPES: DynamicArchetype[] = [
     mechanic: "cushion_stepping",
     generate: ({ preferences, evidence, dayNumber, interest }) => {
       const id = uuidv4();
-      const interestLabel = cleanText(interest);
+      const interestLabel = normalizeInterestLabel(interest);
       const isApartment = preferences.environment === "apartment_small_indoor";
       return {
         id,
@@ -189,7 +189,7 @@ const TODDLER_ARCHETYPES: DynamicArchetype[] = [
         setupMinutes: 3,
         activityMinutes: { min: 10, max: 20 },
         supervisionLevel: "setup_then_independent",
-        parentSetup: ["Check box edges for staples or packing tape before setting it open on the floor."],
+        parentSetup: ["Check the box for staples, loose labels, or rough edges before setting it open on the floor."],
         developmentalDomains: ["gross_motor", "spatial_awareness", "imaginative_play"],
         rationale: `Reinforces spatial boundary awareness and object permanence in early childhood. Grounded in research from ${evidence.sourceTitle}.`,
         whyEngaging: "Toddlers love crawling into enclosed spaces where they feel cozy and in control of their small world.",
@@ -794,7 +794,7 @@ const EARLY_PRIMARY_ARCHETYPES: DynamicArchetype[] = [
     mechanic: "drawn_story_map",
     generate: ({ preferences, evidence, dayNumber, interest }) => {
       const id = uuidv4();
-      const interestLabel = cleanText(interest);
+      const interestLabel = normalizeInterestLabel(interest);
       return {
         id,
         title: `Illustrated ${interestLabel} Expedition Map`,
@@ -845,7 +845,7 @@ const EARLY_PRIMARY_ARCHETYPES: DynamicArchetype[] = [
     mechanic: "crater_impact",
     generate: ({ preferences, evidence, dayNumber, interest }) => {
       const id = uuidv4();
-      const interestLabel = cleanText(interest);
+      const interestLabel = normalizeInterestLabel(interest);
       return {
         id,
         title: `${interestLabel} Surface Crater Impact Test`,
@@ -1055,10 +1055,10 @@ const EARLY_PRIMARY_ARCHETYPES: DynamicArchetype[] = [
         id,
         title: `${interestLabel} Water Drop Obstacle Maze`,
         targetAgeBand: "6-7",
-        description: `Draw a winding maze path on paper, cover with a smooth surface or tape, and steer a bead of water from start to finish.`,
+        description: `Draw a winding maze path on paper beneath a clear reusable lid, then steer a bead of water from start to finish.`,
         instructions: [
           "Draw a winding path with 2 dead ends on a sheet of paper.",
-          "Cover the paper with a clean plastic container lid, baking sheet, or smooth plastic sheet to make it water-resistant.",
+          "Place the paper under a clean plastic container lid or shallow baking sheet to make a visible guide.",
           "Use a spoon to drop a single round water bead at the starting line.",
           "Tilt the surface gently or guide the water drop with the wooden end of a pencil through the maze.",
           `Cheer when your water droplet reaches the ${interestLabel.toLowerCase()} finish line without splitting!`
@@ -1150,7 +1150,7 @@ const EARLY_PRIMARY_ARCHETYPES: DynamicArchetype[] = [
 // Fallback pools for intermediate age bands (4-5, 8-9, 10-12)
 export function getArchetypesForAgeBand(ageBand: AgeBand): DynamicArchetype[] {
   if (ageBand === "2-3") return TODDLER_ARCHETYPES;
-  if (ageBand === "13+") return TEEN_ARCHETYPES;
+  if (ageBand === "10-12" || ageBand === "13+") return TEEN_ARCHETYPES;
   return EARLY_PRIMARY_ARCHETYPES;
 }
 
@@ -1226,7 +1226,7 @@ export function generateAgeCalibratedActivity(params: {
     excludeMechanic: allExcludedMechanics[0],
   });
 
-  if (allExcludedTitles.length > 0 && titleExistsInPlan(activity.title, allExcludedTitles)) {
+  if (allExcludedTitles.length > 0 && titleExistsInPlan(activity.title, allExcludedTitles, 0.6)) {
     // Look through other archetypes in the pool (or eligibleArchetypes)
     const alternatives = pool.filter((a) => a.id !== selectedArchetype.id);
     const searchList = alternatives.length > 0 ? alternatives : archetypes.filter((a) => a.id !== selectedArchetype.id);
@@ -1240,7 +1240,7 @@ export function generateAgeCalibratedActivity(params: {
         interest,
         excludeMechanic: allExcludedMechanics[0],
       });
-      if (!titleExistsInPlan(altActivity.title, allExcludedTitles)) {
+      if (!titleExistsInPlan(altActivity.title, allExcludedTitles, 0.6)) {
         activity = altActivity;
         selectedArchetype = alt;
         break;
@@ -1258,7 +1258,7 @@ export function generateAgeCalibratedActivity(params: {
   } else if (duration === "30-60") {
     activity.activityMinutes = { min: 30, max: 50 };
   } else if (duration === "60+") {
-    activity.activityMinutes = { min: 45, max: 75 };
+    activity.activityMinutes = { min: 60, max: 75 };
   }
 
   // If apartment, ensure title and instructions have zero banned phrases
@@ -1274,6 +1274,35 @@ export function generateAgeCalibratedActivity(params: {
     );
   }
 
+  // Archetypes are reusable starting points; the output must reflect the
+  // parent's actual age selection and its supervision needs.
+  activity.targetAgeBand = ageBand;
+  if (ageBand === "2-3") {
+    activity.supervisionLevel = "active_supervision";
+    if (!activity.safetyNotes.some((note) => note.toLowerCase().includes("supervis"))) {
+      activity.safetyNotes.push("Stay within arm's reach and supervise throughout.");
+    }
+  } else if (ageBand === "4-5") {
+    activity.instructions = activity.instructions.slice(0, 4);
+    if (activity.supervisionLevel === "independent") activity.supervisionLevel = "setup_then_independent";
+    activity.parentSetup = ["Set out the materials and demonstrate the first step before your child begins.", ...activity.parentSetup].slice(0, 2);
+  }
+
+  // Monthly plans revisit useful mechanics, but each week gets a clearly
+  // differentiated challenge so parents never see an apparent duplicate.
+  const cycle = Math.floor((dayNumber - 1) / 7);
+  if (cycle > 0) {
+    const variants = ["", "New Twist", "Level Up", "Final Challenge"];
+    activity.title = `${activity.title}: ${variants[Math.min(cycle, 3)]}`;
+    activity.instructions = [
+      `Try this week's ${variants[Math.min(cycle, 3)].toLowerCase()} version and choose one detail to change from an earlier attempt.`,
+      ...activity.instructions,
+    ];
+    activity.noveltySignature = `${activity.noveltySignature}:cycle-${cycle + 1}`;
+  }
+  const dayLabels = ["Starter", "Explorer", "Builder", "Detective", "Inventor", "Storyteller", "Finale"];
+  activity.title = `${activity.title} — ${dayLabels[(dayNumber - 1) % 7]} Edition`;
+  activity.noveltySignature = `${selectedArchetype.mechanic}:${ageBand}:${normalizeInterestLabel(interest)}:day-${dayNumber}:cycle-${cycle + 1}`;
+
   return activity;
 }
-

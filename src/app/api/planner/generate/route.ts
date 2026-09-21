@@ -70,6 +70,7 @@ export async function POST(request: NextRequest) {
         generationToken: signGenerationToken(generationId),
         chunked: true,
         totalWeeks: 4,
+        preferences,
       });
       setSessionCookie(response, token);
       return response;
@@ -88,6 +89,7 @@ export async function POST(request: NextRequest) {
       generationId: previewResult.preview.generationId,
       generationToken: signGenerationToken(previewResult.preview.generationId),
       preview: previewResult.preview,
+      planner: previewResult.planner,
     });
     setSessionCookie(response, token);
     return response;
