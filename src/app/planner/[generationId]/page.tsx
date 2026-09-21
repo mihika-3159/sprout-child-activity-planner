@@ -557,6 +557,15 @@ export default function FullPlannerPage() {
                   </ol>
                 </div>
 
+                {act.safetyNotes?.length > 0 && (
+                  <div style={{ background: "var(--color-amber-50)", borderLeft: "3px solid var(--color-amber-500)", borderRadius: "var(--radius-sm)", padding: "0.75rem 0.875rem", marginBottom: "1.25rem" }}>
+                    <p style={{ fontSize: "0.8125rem", fontWeight: 700, color: "var(--color-stone-800)", marginBottom: "0.25rem" }}>⚠️ Safety notes</p>
+                    <ul style={{ paddingLeft: "1.1rem", margin: 0, color: "var(--color-stone-700)", fontSize: "0.8125rem", lineHeight: 1.5 }}>
+                      {act.safetyNotes.map((note, idx) => <li key={idx}>{note}</li>)}
+                    </ul>
+                  </div>
+                )}
+
                 {/* Easy Variation & Extension */}
                 <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem", fontSize: "0.8125rem" }}>
                   {act.easyVariation && (

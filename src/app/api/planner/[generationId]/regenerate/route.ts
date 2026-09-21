@@ -111,19 +111,31 @@ export async function POST(
       excludeMechanics: existingMechanics,
     });
 
-    // Plan-wide novelty verification: if title exists in plan, retry once with shifted seed
-    if (titleExistsInPlan(newActivity.title, existingTitles)) {
+    // Plan-wide novelty verification. Never return an activity that already
+    // appears elsewhere in the current plan.
+    let noveltyAttempts = 0;
+    while (titleExistsInPlan(newActivity.title, existingTitles) && noveltyAttempts < 7) {
+      const rejectedTitle = newActivity.title;
+      const rejectedMechanic = newActivity.noveltySignature?.split(":")[0];
+      noveltyAttempts += 1;
       newActivity = await generateSingleActivity({
         sessionId,
         preferences,
-        dayNumber: dayNumber + 1,
+        dayNumber: dayNumber + noveltyAttempts,
         activityIndex,
         targetDomain,
-        excludeTitle: newActivity.title,
-        excludeTitles: [...existingTitles, newActivity.title],
-        excludeMechanic: currentMechanic,
-        excludeMechanics: existingMechanics,
+        excludeTitle: rejectedTitle,
+        excludeTitles: [...existingTitles, rejectedTitle],
+        excludeMechanic: rejectedMechanic || currentMechanic,
+        excludeMechanics: [...existingMechanics, ...(rejectedMechanic ? [rejectedMechanic] : [])],
       });
+    }
+
+    if (titleExistsInPlan(newActivity.title, existingTitles)) {
+      return NextResponse.json(
+        { error: "Could not find a sufficiently different activity. Please try again." },
+        { status: 409 }
+      );
     }
 
     // Update in database planner_activities

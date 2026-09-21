@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import { ensureEvidenceSeeded } from "../../lib/evidence/seed";
 import { generateSingleActivity } from "../../lib/generation/pipeline";
-import { composeMonthlyPlanner } from "../../lib/generation/composer";
+import { composeMonthlyPlanner, composeWeeklyPlanner } from "../../lib/generation/composer";
 import { evaluateActivitySafety, validateMaterialsAllowlist } from "../../lib/generation/safety";
 import { normalizePlannerPreferences, PlannerPreferences } from "../../lib/schemas/preferences";
 import { signGenerationToken, verifyGenerationToken } from "../../lib/session/generationToken";
@@ -299,4 +299,42 @@ describe("Production Personalisation & Age Safety Suite", () => {
     expect(allowlistCheck.passed).toBe(false);
     expect(allowlistCheck.offendingMaterials.some((v) => v.toLowerCase().includes("food coloring"))).toBe(true);
   });
+
+  it("generates a tape-free 10-12 indoor month when tape was not selected", async () => {
+    const prefs = normalizePlannerPreferences({
+      ageBand: "10-12",
+      interests: ["science"],
+      goals: ["problem_solving"],
+      environment: "indoors",
+      duration: "20-30",
+      materials: ["paper", "pencils_crayons", "cardboard"],
+      householdMaterialsOnly: true,
+      productType: "monthly",
+    });
+    const { planner } = await composeMonthlyPlanner({ sessionId: `preteen-month-${Date.now()}`, preferences: prefs });
+    const activities = planner.weeks.flatMap((week) => week.days.flatMap((day) => day.activities));
+    expect(activities).toHaveLength(28);
+    expect(activities.every((activity) => !`${activity.materials.join(" ")} ${activity.instructions.join(" ")} ${activity.parentSetup.join(" ")}`.toLowerCase().includes("tape"))).toBe(true);
+  }, 30000);
+
+  it("regenerates to a title not already present in a complete weekly plan", async () => {
+    const prefs = normalizePlannerPreferences({
+      ageBand: "2-3",
+      interests: ["animals"],
+      goals: ["fine_motor"],
+      environment: "apartment_small_indoor",
+      duration: "10-15",
+    });
+    const { planner } = await composeWeeklyPlanner({ sessionId: `regen-full-${Date.now()}`, preferences: prefs });
+    const existingTitles = planner.days.flatMap((day) => day.activities.map((activity) => activity.title));
+    const existingMechanics = planner.days.flatMap((day) => day.activities.map((activity) => activity.noveltySignature));
+    const replacement = await generateSingleActivity({
+      sessionId: `regen-replacement-${Date.now()}`,
+      preferences: prefs,
+      dayNumber: 1,
+      excludeTitles: existingTitles,
+      excludeMechanics: existingMechanics,
+    });
+    expect(titleExistsInPlan(replacement.title, existingTitles)).toBe(false);
+  }, 30000);
 });

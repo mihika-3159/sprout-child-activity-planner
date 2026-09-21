@@ -412,6 +412,41 @@ const TODDLER_ARCHETYPES: DynamicArchetype[] = [
       };
     },
   },
+  {
+    id: "toddler-laundry-sort",
+    theme: "Large Laundry Sorting",
+    ageBand: "2-3",
+    mechanic: "large_laundry_sort",
+    generate: ({ evidence, dayNumber, interest }) => {
+      const interestLabel = normalizeInterestLabel(interest);
+      return {
+        id: uuidv4(),
+        title: `${interestLabel} Big-and-Small Laundry Sort`,
+        targetAgeBand: "2-3",
+        description: "Sort whole adult socks and small towels into two large containers, then tip them out and begin again.",
+        instructions: [
+          "Place two large bowls or laundry baskets side by side on a towel.",
+          "Offer 4 whole adult socks and 3 small towels, naming each item as your toddler picks it up.",
+          "Help your toddler put socks in one container and towels in the other, then celebrate the finished groups.",
+        ],
+        materials: ["towel", "household containers"],
+        setupMinutes: 2,
+        activityMinutes: { min: 10, max: 15 },
+        supervisionLevel: "active_supervision",
+        parentSetup: ["Use only clean, whole adult socks and towels with no loose decorations or threads."],
+        developmentalDomains: ["fine_motor", "cognitive", "language"],
+        rationale: `Practises early classification, grasping, and everyday vocabulary. Related developmental reading: ${evidence.sourceTitle}.`,
+        whyEngaging: "Toddlers enjoy filling, emptying, and making simple groups with familiar soft objects.",
+        evidence: [{ sourceId: evidence.sourceId, chunkId: evidence.chunkId, sourceTitle: evidence.sourceTitle, organizationAuthors: evidence.organizationAuthors, publicationYear: evidence.publicationYear, sourceType: evidence.sourceType, urlDoi: evidence.urlDoi, freeAccessUrl: evidence.freeAccessUrl, relevantFindingSummary: evidence.chunkText.slice(0, 180), activityApplicationSentence: "Connects simple classification with supervised everyday-object play.", evidenceStrength: evidence.evidenceStrength }],
+        safetyNotes: ["Stay beside your toddler. Use whole adult socks only and remove any item with loose threads or decorations."],
+        easyVariation: "Use only two socks and two towels.",
+        extension: "Ask your toddler to find one matching pair of adult socks by colour.",
+        noveltySignature: `toddler-laundry-d${dayNumber}:${interest}`,
+        chokingHazardChecked: true,
+        materialRiskChecked: true,
+      };
+    },
+  },
 ];
 
 // ─── AGE 13+ TEEN ARCHETYPES (Mature, Intellectual, Rigorous Science & Modeling)
@@ -495,7 +530,7 @@ const TEEN_ARCHETYPES: DynamicArchetype[] = [
         setupMinutes: 5,
         activityMinutes: { min: 35, max: 50 },
         supervisionLevel: "independent",
-        parentSetup: ["Provide a tape measure, ruler, or measured string if available."],
+        parentSetup: ["Provide a long ruler or use 30-centimeter paper lengths as a measuring reference."],
         developmentalDomains: ["numeracy", "science", "cognitive"],
         rationale: `Deepens proportional reasoning, scientific scale translation, and spatial cognition. Grounded in research from ${evidence.sourceTitle}.`,
         whyEngaging: "Visualizing genuine astronomical scale shatters common textbook misconceptions and reveals the staggering emptiness of the solar system.",
@@ -587,17 +622,15 @@ const TEEN_ARCHETYPES: DynamicArchetype[] = [
         id,
         title: "Constrained Structural Truss Bridge Engineering",
         targetAgeBand: "13+",
-        description: "Design and build a 30-centimeter bridge span using only rolled paper tubes and tape, engineered to bear maximum vertical load with minimal material mass.",
+        description: "Design and build a 30-centimeter bridge span using rolled paper tubes and interlocking folded joints, engineered to bear maximum vertical load with minimal material mass.",
         instructions: [
-          "Tightly roll single sheets of paper around a pencil into rigid cylindrical struts with interlocking folded ends or secured with tape if available.",
+          "Tightly roll single sheets of paper around a pencil into rigid cylindrical struts with interlocking folded ends.",
           "Design a planar triangular truss structure (such as a Warren or Pratt truss design) on paper before assembly.",
-          "Assemble the paper struts using interlocking folds or tape joints to bridge a 30-centimeter gap between two tables or books.",
+          "Assemble the paper struts using slotted or interlocking folded joints to bridge a 30-centimeter gap between two books.",
           "Gradually test structural load by placing small books or containers on the center span until deflection occurs.",
           "Document which structural member experienced tension versus compression failure and sketch a design modification to reinforce the critical joint."
         ],
-        materials: (preferences.selectedMaterials || preferences.materials || []).some((m) => m.toLowerCase().includes("tape"))
-          ? ["plain paper", "tape", "books"]
-          : ["plain paper", "cardboard", "books"],
+        materials: ["plain paper", "cardboard", "books"],
         setupMinutes: 5,
         activityMinutes: { min: 40, max: 60 },
         supervisionLevel: "independent",
@@ -781,6 +814,41 @@ const TEEN_ARCHETYPES: DynamicArchetype[] = [
         materialRiskChecked: true,
       };
     },
+  },
+  {
+    id: "teen-paper-column",
+    theme: "Paper Column Load Optimization",
+    ageBand: "13+",
+    mechanic: "paper_column_testing",
+    environments: ["indoors", "apartment_small_indoor", "any"],
+    generate: ({ evidence, dayNumber, interest }) => ({
+      id: uuidv4(),
+      title: "Paper Column Geometry Load Investigation",
+      targetAgeBand: "13+",
+      description: "Compare cylindrical, triangular, and square paper columns to determine how cross-sectional geometry affects compressive load capacity.",
+      instructions: [
+        "Fold three identical sheets into a cylinder, triangular prism, and square prism using interlocking folded seams.",
+        "Stand each column upright on a stable table and place a flat book across its top.",
+        "Add books one at a time, recording the maximum supported count before each column buckles.",
+        "Repeat one trial after changing only the column height, keeping paper size and loading method constant.",
+        "Explain which geometry distributed compressive force most effectively and identify one limitation in the test.",
+      ],
+      materials: ["plain paper", "books"],
+      setupMinutes: 4,
+      activityMinutes: { min: 30, max: 45 },
+      supervisionLevel: "independent",
+      parentSetup: ["Provide a stable floor-level or tabletop testing area."],
+      developmentalDomains: ["problem_solving", "science", "numeracy"],
+      rationale: `Applies controlled comparison and structural reasoning. Related developmental reading: ${evidence.sourceTitle}.`,
+      whyEngaging: "A single sheet can support a surprising load when its geometry changes, producing immediate experimental feedback.",
+      evidence: [{ sourceId: evidence.sourceId, chunkId: evidence.chunkId, sourceTitle: evidence.sourceTitle, organizationAuthors: evidence.organizationAuthors, publicationYear: evidence.publicationYear, sourceType: evidence.sourceType, urlDoi: evidence.urlDoi, freeAccessUrl: evidence.freeAccessUrl, relevantFindingSummary: evidence.chunkText.slice(0, 180), activityApplicationSentence: "Connects iterative testing with spatial and engineering problem-solving.", evidenceStrength: evidence.evidenceStrength }],
+      safetyNotes: ["Use ordinary books and keep the load low enough that falling items cannot injure feet."],
+      easyVariation: "Compare only a cylinder and square column with one book at a time.",
+      extension: "Calculate supported mass per gram of paper for each design.",
+      noveltySignature: `teen-column-d${dayNumber}:${interest}`,
+      chokingHazardChecked: true,
+      materialRiskChecked: true,
+    }),
   },
 ];
 
@@ -1140,6 +1208,44 @@ const EARLY_PRIMARY_ARCHETYPES: DynamicArchetype[] = [
         easyVariation: "Use hand shapes alone without cutting paper props.",
         extension: "Introduce background music by humming or tapping a calm beat on a table.",
         noveltySignature: `primary-shadow-d${dayNumber}:${interest}`,
+        chokingHazardChecked: true,
+        materialRiskChecked: true,
+      };
+    },
+  },
+  {
+    id: "primary-paper-fan",
+    theme: "Paper Fan Wind Investigation",
+    ageBand: "6-7",
+    mechanic: "paper_fan_airflow",
+    environments: ["indoors", "apartment_small_indoor", "any"],
+    generate: ({ evidence, dayNumber, interest }) => {
+      const interestLabel = normalizeInterestLabel(interest);
+      return {
+        id: uuidv4(),
+        title: `${interestLabel} Paper Fan Wind Lab`,
+        targetAgeBand: "6-7",
+        description: "Fold paper fans with different widths and compare how strongly each one moves a lightweight paper marker.",
+        instructions: [
+          "Fold one sheet back and forth into a wide accordion fan.",
+          "Make a second, narrower fan from another sheet.",
+          "Place a crumpled paper marker on the table and fan it five times from the same distance.",
+          "Mark where the paper stopped, then repeat with the other fan.",
+          "Explain which fan moved more air and what you would change in a third design.",
+        ],
+        materials: ["plain paper", "pencils and crayons"],
+        setupMinutes: 2,
+        activityMinutes: { min: 20, max: 30 },
+        supervisionLevel: "setup_then_independent",
+        parentSetup: ["Demonstrate the first accordion fold if needed."],
+        developmentalDomains: ["problem_solving", "science", "fine_motor"],
+        rationale: `Combines comparative testing, folding, and observable airflow. Related developmental reading: ${evidence.sourceTitle}.`,
+        whyEngaging: "Children can feel and see the effect of their design immediately as the paper marker moves.",
+        evidence: [{ sourceId: evidence.sourceId, chunkId: evidence.chunkId, sourceTitle: evidence.sourceTitle, organizationAuthors: evidence.organizationAuthors, publicationYear: evidence.publicationYear, sourceType: evidence.sourceType, urlDoi: evidence.urlDoi, freeAccessUrl: evidence.freeAccessUrl, relevantFindingSummary: evidence.chunkText.slice(0, 180), activityApplicationSentence: "Connects hands-on comparison with early scientific reasoning.", evidenceStrength: evidence.evidenceStrength }],
+        safetyNotes: ["Keep the tabletop clear and avoid fanning close to anyone's face."],
+        easyVariation: "Use one ready-made fan and explore slow versus fast movements.",
+        extension: "Measure the marker's travel using hand spans and record three trials.",
+        noveltySignature: `primary-fan-d${dayNumber}:${interest}`,
         chokingHazardChecked: true,
         materialRiskChecked: true,
       };
