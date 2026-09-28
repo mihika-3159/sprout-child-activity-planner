@@ -1,26 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getDb } from "@/lib/db/schema";
 import { PRIMARY_ADMIN_EMAIL } from "@/lib/config/admin";
+import {
+  listFeedback,
+  setFeedbackResolved,
+  type FeedbackRecord,
+} from "@/lib/feedback/store";
 
 export async function GET() {
   try {
-    const db = getDb();
-    const feedbackList = db
-      .prepare(`
-        SELECT id, session_id, rating, feedback, category, resolved, created_at 
-        FROM user_feedback 
-        ORDER BY created_at DESC 
-        LIMIT 200
-      `)
-      .all() as Array<{
-        id: number;
-        session_id: string;
-        rating: number;
-        feedback: string;
-        category: string;
-        resolved: number;
-        created_at: string;
-      }>;
+    const feedbackList: FeedbackRecord[] = await listFeedback(200);
 
     const total = feedbackList.length;
     const avgRating = total > 0 
@@ -51,8 +39,7 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: "Invalid feedback ID" }, { status: 400 });
     }
 
-    const db = getDb();
-    db.prepare(`UPDATE user_feedback SET resolved = ? WHERE id = ?`).run(resolved ? 1 : 0, Number(feedbackId));
+    await setFeedbackResolved(Number(feedbackId), Boolean(resolved));
 
     return NextResponse.json({ success: true });
   } catch (err: unknown) {
