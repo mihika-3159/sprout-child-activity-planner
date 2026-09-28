@@ -16,11 +16,12 @@ const FEEDBACK_ITEMS_KEY = "sprout:user_feedback:items";
 const FEEDBACK_COUNTER_KEY = "sprout:user_feedback:counter";
 const MAX_STORED_FEEDBACK = 5000;
 
-function hasRedisConfiguration() {
-  return Boolean(
-    process.env.UPSTASH_REDIS_REST_URL &&
-      process.env.UPSTASH_REDIS_REST_TOKEN,
-  );
+function getRedisConfiguration() {
+  const url =
+    process.env.UPSTASH_REDIS_REST_URL ?? process.env.KV_REST_API_URL;
+  const token =
+    process.env.UPSTASH_REDIS_REST_TOKEN ?? process.env.KV_REST_API_TOKEN;
+  return url && token ? { url, token } : null;
 }
 
 function shouldUseLocalStore() {
@@ -28,13 +29,14 @@ function shouldUseLocalStore() {
 }
 
 function getRedis() {
-  if (!hasRedisConfiguration()) {
+  const config = getRedisConfiguration();
+  if (!config) {
     throw new Error(
-      "Durable feedback storage is not configured. Add UPSTASH_REDIS_REST_URL and UPSTASH_REDIS_REST_TOKEN.",
+      "Durable feedback storage is not configured. Connect Upstash Redis to this Vercel project and redeploy.",
     );
   }
 
-  return Redis.fromEnv();
+  return new Redis(config);
 }
 
 export async function saveFeedback(input: {
