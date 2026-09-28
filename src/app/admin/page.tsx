@@ -50,6 +50,7 @@ export default function AdminPage() {
   const [adminEmail, setAdminEmail] = useState<string>("mihika3109@gmail.com");
   const [activeTab, setActiveTab] = useState<"feedback" | "evidence" | "audits" | "cost">("feedback");
   const [loading, setLoading] = useState(true);
+  const [feedbackError, setFeedbackError] = useState<string | null>(null);
 
   // New source form state
   const [newSourceName, setNewSourceName] = useState("");
@@ -71,9 +72,14 @@ export default function AdminPage() {
         setSources(evData.sources || []);
         setChunks(evData.chunks || []);
         setAudits(auditData.audits || []);
-        setFeedbacks(fbData.feedback || []);
-        if (fbData.averageRating) setAvgRating(fbData.averageRating);
-        if (fbData.adminAccount) setAdminEmail(fbData.adminAccount);
+        if (!fbRes.ok) {
+          setFeedbackError(fbData.error || "Unable to load feedback. Please try again.");
+        } else {
+          setFeedbackError(null);
+          setFeedbacks(fbData.feedback || []);
+          if (fbData.averageRating != null) setAvgRating(fbData.averageRating);
+          if (fbData.adminAccount) setAdminEmail(fbData.adminAccount);
+        }
       } catch (err) {
         console.error("Admin load error:", err);
       } finally {
@@ -178,6 +184,11 @@ export default function AdminPage() {
         {/* Tab 0: User Feedback & Beta Reviews */}
         {activeTab === "feedback" && (
           <div style={{ display: "flex", flexDirection: "column", gap: "1.5rem" }}>
+            {feedbackError && (
+              <div role="alert" className="card" style={{ padding: "1rem", color: "var(--color-error)", background: "var(--color-error-bg)" }}>
+                Feedback could not be loaded: {feedbackError}
+              </div>
+            )}
             {/* Feedback Stats */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: "1rem" }}>
               <div className="card" style={{ padding: "1.25rem", background: "white" }}>
@@ -207,7 +218,7 @@ export default function AdminPage() {
                 Direct responses from parents testing the Sprout Activity Planner in live demo and production.
               </p>
 
-              {feedbacks.length === 0 ? (
+              {feedbackError ? null : feedbacks.length === 0 ? (
                 <div style={{ padding: "2.5rem 1rem", textAlign: "center", color: "var(--color-stone-400)" }}>
                   <p style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>🌱</p>
                   <p>No user feedback entries recorded yet.</p>
