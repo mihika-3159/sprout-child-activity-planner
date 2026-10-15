@@ -47,7 +47,7 @@ export default function AdminPage() {
   const [audits, setAudits] = useState<AuditItem[]>([]);
   const [feedbacks, setFeedbacks] = useState<FeedbackItem[]>([]);
   const [avgRating, setAvgRating] = useState<number>(5.0);
-  const [adminEmail, setAdminEmail] = useState<string>("mihika3109@gmail.com");
+  const adminEmail = "Administrator";
   const [activeTab, setActiveTab] = useState<"feedback" | "evidence" | "audits" | "cost">("feedback");
   const [loading, setLoading] = useState(true);
   const [feedbackError, setFeedbackError] = useState<string | null>(null);
@@ -65,6 +65,10 @@ export default function AdminPage() {
           fetch("/api/admin/audits"),
           fetch("/api/admin/feedback"),
         ]);
+        if ([evRes, auditRes, fbRes].some((response) => response.status === 401 || response.status === 503)) {
+          window.location.replace("/admin/login");
+          return;
+        }
         const evData = await evRes.json();
         const auditData = await auditRes.json();
         const fbData = await fbRes.json();
@@ -78,7 +82,7 @@ export default function AdminPage() {
           setFeedbackError(null);
           setFeedbacks(fbData.feedback || []);
           if (fbData.averageRating != null) setAvgRating(fbData.averageRating);
-          if (fbData.adminAccount) setAdminEmail(fbData.adminAccount);
+          // No administrator email is exposed to visitors.
         }
       } catch (err) {
         console.error("Admin load error:", err);
@@ -146,9 +150,13 @@ export default function AdminPage() {
               Admin: <strong>{adminEmail}</strong>
             </span>
           </div>
-          <Link href="/" className="btn btn-ghost btn-sm" style={{ color: "white" }}>
-            Exit Admin
-          </Link>
+          <button type="button" className="btn btn-ghost btn-sm" style={{ color: "white" }}
+            onClick={async () => {
+              await fetch("/api/admin/logout", { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
+              window.location.assign("/");
+            }}>
+            Sign out
+          </button>
         </div>
       </header>
 
