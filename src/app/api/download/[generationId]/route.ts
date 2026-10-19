@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { getOrCreateSession } from "@/lib/session/anonymous";
 import { getDb } from "@/lib/db/schema";
 import { verifyEntitlement } from "@/lib/entitlement/check";
-import { WeeklyPlanner, MonthlyPlanner, PlannedActivity } from "@/lib/schemas/preferences";
-import { formatMaterial, formatSupervision, formatEnvironment, humanize } from "@/lib/utils/formatters";
+import { WeeklyPlanner, MonthlyPlanner } from "@/lib/schemas/preferences";
+import { escapePrintableHtml, getPrintableCards } from "@/lib/utils/printable";
+import { formatMaterial, formatSupervision, formatEnvironment } from "@/lib/utils/formatters";
 
 export async function GET(
   request: NextRequest,
@@ -35,9 +36,8 @@ export async function GET(
     const isWeekly = generation.product_type === "weekly";
     const planner = JSON.parse(generation.full_data) as WeeklyPlanner | MonthlyPlanner;
 
-    const days: Array<{ dayNumber: number; activities: PlannedActivity[] }> = isWeekly
-      ? (planner as WeeklyPlanner).days
-      : (planner as MonthlyPlanner).weeks[0].days;
+    // Include each week and every activity, not just the first week/day activity.
+    const cards = getPrintableCards(planner, isWeekly);
 
     const materials = isWeekly
       ? (planner as WeeklyPlanner).materialsOverview
@@ -52,7 +52,7 @@ export async function GET(
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Sprout Activity Planner - Age ${planner.preferences.ageBand || planner.preferences.child?.ageBand || "4-5"}</title>
+  <title>Sprout Activity Planner - Age ${escapePrintableHtml(planner.preferences.ageBand || planner.preferences.child?.ageBand || "4-5")}</title>
   <style>
     @page {
       size: A4 portrait;
@@ -107,6 +107,15 @@ export async function GET(
       padding: 2px 8px;
       font-size: 0.75rem;
       margin: 2px;
+    }
+    .week-title {
+      font-size: 1.2rem;
+      font-weight: 750;
+      color: #2e4a2a;
+      margin: 1.75rem 0 0.85rem;
+      padding-bottom: 0.35rem;
+      border-bottom: 2px solid #2e4a2a;
+      break-after: avoid;
     }
     .day-card {
       border: 1px solid #ccc;
@@ -186,58 +195,59 @@ export async function GET(
       <div class="title">Personalised Screen-Free Activity Plan</div>
     </div>
     <div class="meta" style="text-align: right;">
-      <div>Age Band: <strong>${planner.preferences.ageBand || planner.preferences.child?.ageBand || "4-5"}</strong></div>
-      <div>Environment: ${formatEnvironment(planner.preferences.environment)}</div>
+      <div>Age Band: <strong>${escapePrintableHtml(planner.preferences.ageBand || planner.preferences.child?.ageBand || "4-5")}</strong></div>
+      <div>Environment: ${escapePrintableHtml(formatEnvironment(planner.preferences.environment))}</div>
     </div>
   </div>
 
   <div class="prep-box">
-    <div class="prep-title">⏱️ Prepare the Week in 10 Minutes</div>
-    <p style="font-size: 0.85rem; margin: 0.25rem 0 0.5rem;">${prepSummary.replace(/pencils_crayons/g, "pencils and crayons").replace(/child_safe_scissors/g, "child-safe scissors").replace(/_/g, " ")}</p>
+    <div class="prep-title">⏱️ ${isWeekly ? "Prepare the Week" : "Prepare the Month"}</div>
+    <p style="font-size: 0.85rem; margin: 0.25rem 0 0.5rem;">${escapePrintableHtml(prepSummary.replace(/pencils_crayons/g, "pencils and crayons").replace(/child_safe_scissors/g, "child-safe scissors").replace(/_/g, " "))}</p>
     <div>
-      ${materials.map((m) => `<span class="materials-tag">${formatMaterial(m)}</span>`).join("")}
+      ${materials.map((m) => `<span class="materials-tag">${escapePrintableHtml(formatMaterial(m))}</span>`).join("")}
     </div>
   </div>
 
-  ${days
+  ${cards
     .map(
       (d) => `
+    ${d.startsWeek ? `<h2 class="week-title">Week ${d.weekNumber}${d.theme ? `: ${escapePrintableHtml(d.theme)}` : ""}</h2>` : ""}
     <div class="day-card">
       <div class="day-header">
         <div class="day-title">
           <span class="checkbox-box"></span>
-          Day ${d.dayNumber}: ${d.activities[0].title
+          Day ${d.dayNumber}${d.activitiesInDay > 1 ? ` · Activity ${d.activityIndex + 1}` : ""}: ${escapePrintableHtml(d.activity.title
             .replace(/^Day\s*\d+[:\s-]+/i, "")
-            .replace(/_/g, " ")}
+            .replace(/_/g, " "))}
         </div>
         <div style="font-size: 0.75rem; color: #666;">
-          Setup: ~${d.activities[0].setupMinutes}m &nbsp;|&nbsp; Activity time: ${d.activities[0].activityMinutes.min}–${d.activities[0].activityMinutes.max}m &nbsp;|&nbsp; ${formatSupervision(d.activities[0].supervisionLevel)}
+          Setup: ~${d.activity.setupMinutes}m &nbsp;|&nbsp; Activity time: ${d.activity.activityMinutes.min}–${d.activity.activityMinutes.max}m &nbsp;|&nbsp; ${escapePrintableHtml(formatSupervision(d.activity.supervisionLevel))}
         </div>
       </div>
-      <p style="font-size: 0.88rem; margin: 0.25rem 0 0.5rem;">${d.activities[0].description.replace(/_/g, " ")}</p>
+      <p style="font-size: 0.88rem; margin: 0.25rem 0 0.5rem;">${escapePrintableHtml(d.activity.description.replace(/_/g, " "))}</p>
       
       <div style="font-size: 0.8rem; font-weight: 600;">Child Instructions:</div>
       <ol class="steps">
-        ${d.activities[0].instructions.map((step) => `<li>${step.replace(/_/g, " ")}</li>`).join("")}
+        ${d.activity.instructions.map((step) => `<li>${escapePrintableHtml(step.replace(/_/g, " "))}</li>`).join("")}
       </ol>
 
       <div style="font-size: 0.78rem; color: #555; margin-bottom: 0.5rem;">
-        <strong>Materials:</strong> ${d.activities[0].materials.map((m) => formatMaterial(m)).join(", ")}
+        <strong>Materials:</strong> ${d.activity.materials.map((m) => escapePrintableHtml(formatMaterial(m))).join(", ")}
       </div>
 
-      ${d.activities[0].safetyNotes && d.activities[0].safetyNotes.length > 0
+      ${d.activity.safetyNotes && d.activity.safetyNotes.length > 0
         ? `<div style="background: #fff8e7; border-left: 3px solid #d97706; padding: 0.35rem 0.6rem; font-size: 0.78rem; color: #78350f; margin-bottom: 0.35rem; border-radius: 3px;">
-            <strong>⚠ Safety:</strong> ${d.activities[0].safetyNotes.join(" · ")}
+            <strong>⚠ Safety:</strong> ${d.activity.safetyNotes.map(escapePrintableHtml).join(" · ")}
            </div>`
         : ""
       }
 
       <div style="background: #fdfbf7; border-left: 3px solid #6b8e23; padding: 0.4rem 0.6rem; font-size: 0.8rem; color: #374151; margin-bottom: 0.35rem; border-radius: 3px;">
-        <strong>Why it may appeal:</strong> ${d.activities[0].whyEngaging ? d.activities[0].whyEngaging.replace(/_/g, " ") : "Designed to spark hands-on curiosity and creative play."}
+        <strong>Why it may appeal:</strong> ${d.activity.whyEngaging ? escapePrintableHtml(d.activity.whyEngaging.replace(/_/g, " ")) : "Designed to spark hands-on curiosity and creative play."}
       </div>
 
       <div class="rationale">
-        Why it's here: ${d.activities[0].rationale.replace(/_/g, " ")}
+        Why it's here: ${escapePrintableHtml(d.activity.rationale.replace(/_/g, " "))}
       </div>
     </div>
   `

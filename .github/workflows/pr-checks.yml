@@ -1,0 +1,31 @@
+name: Sprout pull request checks
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: TypeScript and printable export tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      AI_PROVIDER: mock
+      GEMINI_API_KEY: ""
+      DEMO_MODE: "true"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+      - name: Check TypeScript
+        run: npx tsc --noEmit
+      - name: Run printable export regression tests
+        run: npm test -- src/tests/unit/printable.test.ts
