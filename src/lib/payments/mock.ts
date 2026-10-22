@@ -15,8 +15,8 @@ export class MockPaymentProvider implements PaymentProvider {
   async createCheckoutSession(request: CheckoutSessionRequest): Promise<CheckoutSessionResponse> {
     const transactionId = `sandbox_tx_${uuidv4().slice(0, 8)}`;
 
-    // Build the sandbox completion URL pointing directly to the mock confirmation endpoint
-    const url = `/api/checkout/mock-complete?tx=${transactionId}&sid=${request.sessionId}&gid=${request.generationId}&product=${request.productType}`;
+    // The signed anonymous session cookie, not URL parameters, identifies the owner.
+    const url = `/api/checkout/mock-complete?gid=${encodeURIComponent(request.generationId)}&product=${encodeURIComponent(request.productType)}`;
 
     return {
       checkoutUrl: url,
