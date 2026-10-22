@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getOrCreateSession } from "@/lib/session/anonymous";
+import { getOrCreateSession, setSessionCookie } from "@/lib/session/anonymous";
 import { getPaymentProvider } from "@/lib/payments";
 import { PlannerProduct, PLANNER_PRODUCTS } from "@/lib/config/products";
 import { getDb } from "@/lib/db/schema";
@@ -7,7 +7,7 @@ import { rateLimitMiddleware } from "@/lib/rateLimit/rateLimiter";
 
 export async function POST(request: NextRequest) {
   try {
-    const { sessionId } = await getOrCreateSession();
+    const { sessionId, token } = await getOrCreateSession();
 
     // Rate limit checkout starts
     const rateLimit = rateLimitMiddleware(sessionId, "plannerPreviews");
@@ -21,22 +21,26 @@ export async function POST(request: NextRequest) {
       productType: PlannerProduct;
     };
 
-    if (!generationId || !productType || !PLANNER_PRODUCTS[productType]) {
+    if (!generationId || !productType || !Object.prototype.hasOwnProperty.call(PLANNER_PRODUCTS, productType) || !PLANNER_PRODUCTS[productType].enabled) {
       return NextResponse.json({ error: "Invalid generationId or productType" }, { status: 400 });
     }
 
     // Verify generation belongs to this session
     const db = getDb();
     const generation = db
-      .prepare("SELECT id FROM planner_generations WHERE id = ? AND session_id = ?")
-      .get(generationId, sessionId);
+      .prepare("SELECT id, session_id, product_type FROM planner_generations WHERE id = ?")
+      .get(generationId) as { session_id?: string; product_type?: string } | undefined;
 
-    if (!generation) {
+    if (!generation || generation.session_id !== sessionId || generation.product_type !== productType) {
       return NextResponse.json({ error: "Planner generation not found" }, { status: 404 });
     }
 
     const origin = request.headers.get("origin") || request.nextUrl.origin;
     const provider = getPaymentProvider();
+    // Do not simulate purchase of a paid product when Stripe is unavailable.
+    if (provider.id === "mock_sandbox" && (PLANNER_PRODUCTS[productType].priceInPence ?? 0) > 0) {
+      return NextResponse.json({ error: "Paid checkout is not configured" }, { status: 503 });
+    }
 
     const checkoutSession = await provider.createCheckoutSession({
       sessionId,
@@ -52,7 +56,7 @@ export async function POST(request: NextRequest) {
       VALUES ('checkout_started', ?)
     `).run(productType);
 
-    return NextResponse.json(checkoutSession);
+    return setSessionCookie(NextResponse.json(checkoutSession), token);
   } catch (err: unknown) {
     console.error("[Checkout API] Error:", err);
     return NextResponse.json(
