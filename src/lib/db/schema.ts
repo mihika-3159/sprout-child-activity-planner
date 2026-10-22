@@ -25,7 +25,7 @@ interface TableStore {
   user_feedback: Array<Record<string, unknown>>;
 }
 
-class SproutDatabase {
+export class SproutDatabase {
   private store: TableStore;
   private filePath: string;
 
@@ -403,7 +403,21 @@ class SproutDatabase {
     // ─── DELETE / CLEAR SESSION ─────────────────────────────────
     if (lower.includes("delete from")) {
       if (lower.includes("from planner_activities")) {
-        this.store.planner_activities = {};
+        // The session-clear route deletes only activities whose generation is owned
+        // by this session. Clearing *every* activity loses other families' data.
+        if (lower.includes("where generation_id in") && lower.includes("from planner_generations where session_id = ?")) {
+          const sid = String(params[0] ?? "");
+          const ownedGenerationIds = new Set(
+            Object.values(this.store.planner_generations)
+              .filter((generation) => generation.session_id === sid)
+              .map((generation) => String(generation.id))
+          );
+          for (const [id, activity] of Object.entries(this.store.planner_activities)) {
+            if (ownedGenerationIds.has(String(activity.generation_id))) {
+              delete this.store.planner_activities[id];
+            }
+          }
+        }
       } else if (lower.includes("from planner_generations")) {
         const sid = params[0] as string;
         Object.keys(this.store.planner_generations).forEach((gid) => {
@@ -490,19 +504,16 @@ class SproutDatabase {
     // ─── SELECT FROM planner_generations ─────────────────────────
     if (lower.includes("from planner_generations")) {
       const allGens = Object.values(this.store.planner_generations);
-      if (lower.includes("where session_id = ?") && !lower.includes("id = ?")) {
-        const sid = params[0] as string;
-        return allGens.filter((g) => g.session_id === sid);
-      }
       if (lower.includes("where id = ? and session_id = ?")) {
         const id = String(params[0]);
         const sid = String(params[1]);
         const gen = this.store.planner_generations[id];
-        if (gen && (!gen.session_id || gen.session_id === sid)) {
-          return [gen];
-        }
-        const found = allGens.find((g) => g.id === id && (!g.session_id || g.session_id === sid));
-        return found ? [found] : (gen ? [gen] : []);
+        // Never fall back to the id-only record when the owner does not match.
+        return gen && gen.session_id === sid ? [gen] : [];
+      }
+      if (lower.includes("where session_id = ?")) {
+        const sid = String(params[0]);
+        return allGens.filter((generation) => generation.session_id === sid);
       }
       if (lower.includes("where id = ?")) {
         const id = params[0] as string;
