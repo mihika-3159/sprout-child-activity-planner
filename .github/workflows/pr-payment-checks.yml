@@ -1,0 +1,31 @@
+name: Sprout payment safety checks
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      AI_PROVIDER: mock
+      DEMO_MODE: "true"
+      SESSION_SECRET: "test-session-secret-longer-than-32-chars"
+      GEMINI_API_KEY: ""
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+      - name: Install dependencies
+        run: npm ci --ignore-scripts
+      - name: Check TypeScript
+        run: npx tsc --noEmit
+      - name: Check mock checkout regression tests
+        run: npm test -- src/tests/payment/mock-checkout.test.ts
